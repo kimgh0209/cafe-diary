@@ -11,7 +11,7 @@
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-192.png">
 <title>맛집 지도 일기</title>
-<script src="config.js"></script>
+<script src="config.js?v=5"></script>
 <script src="https://unpkg.com/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -356,7 +356,7 @@ body.trip .results .manual{color:var(--trip)}
   <input type="file" id="homeFile" accept="image/*" hidden>
   <div class="inner">
     <div class="top">
-      <div><h1>우리의 기록</h1><div class="date" id="homeDate"></div><div class="date" id="syncState"></div><button class="outlink" id="logoutBtn" type="button" hidden>로그아웃</button></div>
+      <div><h1>우리의 기록</h1><div class="date" id="homeDate"></div><div class="date" id="syncState"></div><div class="date" id="appVer" style="opacity:.6;font-size:11px"></div><button class="outlink" id="logoutBtn" type="button" hidden>로그아웃</button></div>
       <button class="cam" id="homeCam" type="button" aria-label="배경 사진 바꾸기">
         <svg viewBox="0 0 24 24"><path d="M4 8h3l2-2h6l2 2h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg></button>
     </div>
@@ -396,6 +396,7 @@ body.trip .results .manual{color:var(--trip)}
 </div></nav>
 
 <script>
+const APP_VER='5';
 const $=id=>document.getElementById(id);
 const ACID=[['매우 낮음','쌉쌀하고 묵직한 맛'],['낮음','고소하고 부드러운 맛'],['중간','균형 잡힌 산미'],['높음','과일처럼 상큼한 산미'],['매우 높음','레몬처럼 날카로운 산미']];
 const KIND={spot:{label:'명소',icon:'📍'},food:{label:'식당',icon:'🍽️'},cafe:{label:'카페',icon:'☕'},bakery:{label:'빵집',icon:'🥐'},lodging:{label:'숙소',icon:'🛏️'}};
@@ -582,6 +583,7 @@ function showPhoto(){
 function drawHome(){
   const d=new Date();
   $('homeDate').textContent=d.getFullYear()+'년 '+(d.getMonth()+1)+'월 '+d.getDate()+'일 '+DOW[d.getDay()]+'요일';
+  $('appVer').textContent='앱 버전 '+APP_VER;
   const cafeSum=db.places.reduce((s,p)=>s+total(p),0);
   $('homeCafeSub').textContent=db.places.length?db.places.length+'곳 방문 · '+won(cafeSum):'아직 기록이 없어요';
   const stops=db.trips.reduce((s,t)=>s+t.stops.length,0);
@@ -1031,7 +1033,8 @@ $('logoutBtn').onclick=async()=>{
   sbUser=null;setSync('');showLogin();
 };
 async function initAuth(){
-  if(!SB_URL||!SB_KEY||!window.supabase)return;
+  if(!SB_URL||!SB_KEY){setSync('공유 꺼짐: 설정 파일을 읽지 못했어요');return}
+  if(!window.supabase){setSync('공유 꺼짐: 로그인 도구를 불러오지 못했어요');return}
   sb=window.supabase.createClient(SB_URL,SB_KEY);
   let s=null;try{const r=await sb.auth.getSession();s=r.data.session}catch(e){}
   if(s){sbUser=s.user;$('logoutBtn').hidden=false;startSync()}

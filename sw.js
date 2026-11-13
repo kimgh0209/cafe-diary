@@ -1,5 +1,5 @@
 // 앱 화면 파일을 저장해 두어 다음부터 빨리 열리게 하는 파일
-const CACHE = 'cafe-diary-v4';
+const CACHE = 'cafe-diary-v5';
 const SHELL = ['./', './index.html', './manifest.json', './icon-192.png', './icon-512.png'];
 
 self.addEventListener('install', e => {
@@ -20,7 +20,7 @@ self.addEventListener('fetch', e => {
   if (url.hostname.endsWith('supabase.co')) return;
   // 먼저 인터넷에서 받고, 안 되면 저장해 둔 것 사용
   e.respondWith(
-    fetch(req).then(res => {
+    fetch(req, { cache: 'no-store' }).then(res => {
       if (res.ok && (url.origin === location.origin || url.hostname === 'unpkg.com')) {
         const copy = res.clone();
         caches.open(CACHE).then(c => c.put(req, copy));
