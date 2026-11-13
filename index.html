@@ -124,10 +124,34 @@ section.sec h2{margin:0;font-size:16px;display:flex;justify-content:space-betwee
   border:3px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.35);display:grid;place-items:center}
 .pin span{transform:rotate(45deg);font-size:15px;line-height:1}
 .leaflet-container{font-family:var(--font)}
+#map{z-index:0}
+.search[hidden]{display:none}
+
+/* 가게 검색 */
+.search{position:fixed;z-index:390;top:calc(12px + env(safe-area-inset-top,0px));left:0;right:0;display:flex;flex-direction:column;align-items:center;
+  padding:0 max(12px,env(safe-area-inset-right,0px)) 0 max(12px,env(safe-area-inset-left,0px));pointer-events:none}
+.search>*{pointer-events:auto;width:100%;max-width:496px}
+.search input{width:100%;font:inherit;font-size:16px;color:var(--fg);background:var(--panel);border:1px solid var(--line);
+  border-radius:999px;padding:11px 18px;box-shadow:0 3px 12px rgba(0,0,0,.2)}
+.results{margin-top:8px;background:var(--panel);border:1px solid var(--line);border-radius:14px;box-shadow:0 6px 20px rgba(0,0,0,.25);
+  max-height:50vh;overflow-y:auto}
+.results[hidden]{display:none}
+.results button{display:block;width:100%;text-align:left;background:none;border:0;border-bottom:1px solid var(--line);padding:10px 16px;cursor:pointer}
+.results button:last-child{border-bottom:0}
+.results .rn{font-weight:600}
+.results .rs{font-size:12px;color:var(--muted)}
+.results .tag{font-size:11px;color:var(--accent);margin-left:6px}
+.results .none{padding:12px 16px;color:var(--muted);font-size:14px}
+.results .manual{color:var(--accent);font-size:14px}
 </style>
 </head>
 <body>
 <div id="map" aria-label="지도"></div>
+
+<div class="search" id="search">
+  <input type="search" id="q" placeholder="가게 이름 검색 (예: 스타벅스 동백)" autocomplete="off" aria-label="가게 검색">
+  <div class="results" id="results" hidden></div>
+</div>
 
 <div class="banner" id="banner" hidden><span id="bannerText"></span><button type="button" id="bannerCancel">취소</button></div>
 
@@ -237,7 +261,7 @@ function queueSave(){clearTimeout(saveTimer);saveTimer=setTimeout(save,300)}
 
 /* 지도 */
 const map=L.map('map',{zoomControl:false}).setView([37.2703,127.1500],16);
-L.control.zoom({position:'topright'}).addTo(map);
+L.control.zoom({position:'bottomright'}).addTo(map);
 /* 깔끔한 벡터 지도(OpenFreeMap). 불러오지 못하면 기본 OpenStreetMap 사용 */
 try{
   L.maplibreGL({style:'https://tiles.openfreemap.org/styles/liberty',
@@ -268,15 +292,71 @@ function setTab(t){
 $('tabMap').onclick=()=>{cancelMode();setTab('map')};
 $('tabList').onclick=()=>{cancelMode();setTab('list')};
 $('tabAdd').onclick=()=>{setTab('map');startMode({type:'add'},'지도에서 방문한 곳을 눌러 주세요')};
-function startMode(m,text){mode=m;$('bannerText').textContent=text;$('banner').hidden=false;map.getContainer().style.cursor='crosshair'}
-function cancelMode(){mode=null;$('banner').hidden=true;map.getContainer().style.cursor=''}
+function startMode(m,text){mode=m;$('bannerText').textContent=text;$('banner').hidden=false;$('search').hidden=true;map.getContainer().style.cursor='crosshair'}
+function cancelMode(){mode=null;$('banner').hidden=true;$('search').hidden=false;map.getContainer().style.cursor=''}
 $('bannerCancel').onclick=()=>{const m=mode;cancelMode();if(m&&m.type==='move')openEdit(m.place.id)};
 map.on('click',e=>{
   if(!mode)return;
   const m=mode;cancelMode();
-  if(m.type==='add'){const p=newPlace(e.latlng.lat,e.latlng.lng);db.places.push(p);save();drawMarkers();openEdit(p.id,true)}
+  if(m.type==='add'){const p=newPlace(e.latlng.lat,e.latlng.lng);p.name=m.name||'';db.places.push(p);save();drawMarkers();openEdit(p.id,true)}
   else{m.place.lat=e.latlng.lat;m.place.lng=e.latlng.lng;save();drawMarkers();openEdit(m.place.id)}
 });
+
+/* 가게 검색 (Photon: OpenStreetMap 기반 무료 검색) */
+let searchTimer,searchSeq=0;
+function hideResults(){$('results').hidden=true}
+function addrOf(pr){return [[pr.street,pr.housenumber].filter(Boolean).join(' '),pr.district,pr.city||pr.county].filter(Boolean).join(' · ')}
+function kindOf(pr){return /bakery|pastry|confectionery/.test(pr.osm_value||'')?'bakery':'cafe'}
+async function runSearch(q){
+  const my=++searchSeq,box=$('results');
+  const c=map.getCenter();
+  let feats=[];
+  const get=async s=>{
+    const r=await fetch('https://photon.komoot.io/api/?limit=10&lat='+c.lat+'&lon='+c.lng+'&q='+encodeURIComponent(s));
+    const j=await r.json();return (j.features||[]).filter(f=>(f.properties.countrycode||'KR')==='KR');
+  };
+  try{
+    feats=await get(q);
+    // "스타벅스 동백"처럼 지역을 붙여서 결과가 없으면 첫 단어만으로 다시 검색 (지도 중심에서 가까운 순)
+    if(!feats.length&&q.includes(' '))feats=await get(q.split(/\s+/)[0]);
+  }catch(e){
+    if(my!==searchSeq)return;
+    box.innerHTML='<div class="none">검색에 연결하지 못했어요. 인터넷을 확인해 주세요.</div>';box.hidden=false;return;
+  }
+  if(my!==searchSeq)return;
+  box.innerHTML='';
+  feats.forEach(f=>{
+    const pr=f.properties,b=document.createElement('button');b.type='button';
+    const t=pr.osm_value==='cafe'?'카페':kindOf(pr)==='bakery'?'빵집':'';
+    b.innerHTML='<div class="rn"></div><div class="rs"></div>';
+    b.querySelector('.rn').textContent=pr.name||addrOf(pr);
+    if(t){const s=document.createElement('span');s.className='tag';s.textContent=t;b.querySelector('.rn').appendChild(s)}
+    b.querySelector('.rs').textContent=addrOf(pr);
+    b.onclick=()=>pickResult(f);
+    box.appendChild(b);
+  });
+  if(!feats.length){const d=document.createElement('div');d.className='none';d.textContent='검색 결과가 없어요.';box.appendChild(d)}
+  const m=document.createElement('button');m.type='button';m.className='manual';
+  m.textContent='"'+q+'" 이름으로 지도에서 직접 찍기';
+  m.onclick=()=>{hideResults();$('q').value='';startMode({type:'add',name:q},'지도에서 방문한 곳을 눌러 주세요')};
+  box.appendChild(m);
+  box.hidden=false;
+}
+function pickResult(f){
+  const pr=f.properties,[lng,lat]=f.geometry.coordinates,name=pr.name||'';
+  hideResults();$('q').value='';$('q').blur();
+  let p=db.places.find(x=>x.name===name&&map.distance([x.lat,x.lng],[lat,lng])<100);
+  if(!p){p=newPlace(lat,lng);p.name=name;p.kind=kindOf(pr);db.places.push(p);save();drawMarkers()}
+  map.setView([lat,lng],17);
+  openEdit(p.id,!name);
+}
+$('q').oninput=()=>{
+  clearTimeout(searchTimer);const q=$('q').value.trim();
+  if(q.length<2){searchSeq++;hideResults();return}
+  searchTimer=setTimeout(()=>runSearch(q),350);
+};
+$('q').onfocus=()=>{if($('results').children.length&&$('q').value.trim().length>=2)$('results').hidden=false};
+map.on('click',hideResults);
 
 /* 목록 */
 function avg(p){const r=[p.coffee.rating,p.bake.rating].filter(Boolean);return r.length?r.reduce((a,b)=>a+b)/r.length:0}
