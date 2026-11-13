@@ -11,7 +11,7 @@
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-192.png">
 <title>맛집 지도 일기</title>
-<script src="config.js?v=5"></script>
+<script src="config.js?v=7"></script>
 <script src="https://unpkg.com/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -79,15 +79,16 @@ body.trip .ibtn{color:var(--trip)}
 
 /* 홈 화면 */
 .home{z-index:800;background:#3a2c24;color:#fff;overflow:hidden}
-.home .bg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.home .bg{position:absolute;left:50%;bottom:0;transform:translateX(-50%);max-width:100%;max-height:100%;width:auto;height:auto;
+  -webkit-mask-image:linear-gradient(to bottom,transparent 0,#000 14%),linear-gradient(to right,transparent 0,#000 5%,#000 95%,transparent 100%);
+  -webkit-mask-composite:source-in;mask-image:linear-gradient(to bottom,transparent 0,#000 14%),linear-gradient(to right,transparent 0,#000 5%,#000 95%,transparent 100%);mask-composite:intersect}
 .home .bg[hidden]{display:none}
-.home .shade{position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.35) 0%,rgba(0,0,0,0) 30%,rgba(0,0,0,.15) 55%,rgba(0,0,0,.72) 100%)}
 .home .empty-photo{position:absolute;inset:0;display:grid;place-items:center;text-align:center;padding:0 32px;color:#f3dcd3;
   background:radial-gradient(circle at 30% 20%,#7a4a38,#3a2c24 70%)}
 .home .empty-photo[hidden]{display:none}
 .home .empty-photo button{margin-top:12px;border:1px solid rgba(255,255,255,.5);background:rgba(255,255,255,.12);color:#fff;
   border-radius:999px;padding:9px 18px;cursor:pointer}
-.home .inner{position:relative;width:100%;max-width:520px;display:flex;flex-direction:column;justify-content:space-between;
+.home .inner{position:relative;width:100%;max-width:520px;display:flex;flex-direction:column;justify-content:flex-start;gap:14px;
   padding:calc(18px + env(safe-area-inset-top,0px)) max(20px,env(safe-area-inset-right,0px)) calc(28px + env(safe-area-inset-bottom,0px)) max(20px,env(safe-area-inset-left,0px))}
 .home .top{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
 .home h1{margin:0;font-size:26px;letter-spacing:-.01em;text-shadow:0 2px 12px rgba(0,0,0,.45)}
@@ -97,13 +98,19 @@ body.trip .ibtn{color:var(--trip)}
 .home .cam svg{width:20px;height:20px;stroke:#fff;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 .home .menu{display:grid;gap:12px}
 .mbtn{display:flex;align-items:center;gap:14px;width:100%;text-align:left;border:1px solid rgba(255,255,255,.28);border-radius:16px;
-  background:rgba(30,22,18,.42);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);color:#fff;padding:16px 18px;cursor:pointer}
-.mbtn .ic{flex:none;width:46px;height:46px;border-radius:12px;display:grid;place-items:center;background:var(--accent)}
+  background:rgba(30,22,18,.42);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);color:#fff;padding:10px 14px;cursor:pointer}
+.mbtn .ic{flex:none;width:40px;height:40px;border-radius:12px;display:grid;place-items:center;background:var(--accent)}
 .mbtn.trip .ic{background:var(--trip)}
-.mbtn .ic svg{width:26px;height:26px;stroke:#fff;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
-.mbtn .t{font-size:18px;font-weight:600}
+.mbtn .ic svg{width:23px;height:23px;stroke:#fff;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.mbtn .t{font-size:17px;font-weight:600}
 .mbtn .s{font-size:13px;opacity:.85}
 .mbtn:hover{background:rgba(30,22,18,.55)}
+.home.light{color:#3b2a20}
+.home.light h1,.home.light .date,.home.light .outlink{color:#3b2a20;text-shadow:none}
+.home.light .mbtn{background:rgba(255,255,255,.58);border-color:rgba(60,40,30,.14);color:#3b2a20;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
+.home.light .mbtn:hover{background:rgba(255,255,255,.75)}
+.home.light .cam{background:rgba(255,255,255,.62)}
+.home.light .cam svg{stroke:#3b2a20}
 .home .outlink{margin-top:6px;border:0;background:none;color:#fff;opacity:.8;font-size:12px;text-decoration:underline;cursor:pointer;padding:2px 0;text-shadow:0 1px 6px rgba(0,0,0,.5)}
 .home .outlink[hidden]{display:none}
 
@@ -352,11 +359,10 @@ body.trip .results .manual{color:var(--trip)}
 <div class="screen home" id="homeScreen">
   <img class="bg" id="homeImg" alt="가족사진" hidden>
   <div class="empty-photo" id="homeEmpty"><div>가족사진을 넣으면<br>시작 화면 배경이 돼요<br><button type="button" id="homeEmptyBtn">사진 고르기</button></div></div>
-  <div class="shade"></div>
   <input type="file" id="homeFile" accept="image/*" hidden>
   <div class="inner">
     <div class="top">
-      <div><h1>우리의 기록</h1><div class="date" id="homeDate"></div><div class="date" id="syncState"></div><div class="date" id="appVer" style="opacity:.6;font-size:11px"></div><button class="outlink" id="logoutBtn" type="button" hidden>로그아웃</button></div>
+      <div><h1>우리가족기록♡</h1><div class="date" id="homeDate"></div><div class="date" id="syncState"></div><div class="date" id="appVer" style="opacity:.6;font-size:11px"></div><button class="outlink" id="logoutBtn" type="button" hidden>로그아웃</button></div>
       <button class="cam" id="homeCam" type="button" aria-label="배경 사진 바꾸기">
         <svg viewBox="0 0 24 24"><path d="M4 8h3l2-2h6l2 2h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg></button>
     </div>
@@ -374,7 +380,7 @@ body.trip .results .manual{color:var(--trip)}
 <!-- 로그인 -->
 <div class="screen login" id="loginScreen" hidden>
   <div class="page"><div class="scroll" style="flex:none">
-    <h1>우리의 기록</h1>
+    <h1>우리가족기록♡</h1>
     <div class="sub">가족 계정으로 로그인해 주세요</div>
     <form id="loginForm">
       <div><label class="lbl" for="lEmail">이메일</label><input type="email" id="lEmail" autocomplete="username" required></div>
@@ -396,7 +402,7 @@ body.trip .results .manual{color:var(--trip)}
 </div></nav>
 
 <script>
-const APP_VER='5';
+const APP_VER='7';
 const $=id=>document.getElementById(id);
 const ACID=[['매우 낮음','쌉쌀하고 묵직한 맛'],['낮음','고소하고 부드러운 맛'],['중간','균형 잡힌 산미'],['높음','과일처럼 상큼한 산미'],['매우 높음','레몬처럼 날카로운 산미']];
 const KIND={spot:{label:'명소',icon:'📍'},food:{label:'식당',icon:'🍽️'},cafe:{label:'카페',icon:'☕'},bakery:{label:'빵집',icon:'🥐'},lodging:{label:'숙소',icon:'🛏️'}};
@@ -576,9 +582,22 @@ function fitTrip(){
 
 /* 홈 화면 */
 function showPhoto(){
-  const has=!!db.home.photo;
-  $('homeImg').hidden=!has;$('homeEmpty').hidden=has;
-  if(has)$('homeImg').src=db.home.photo;
+  const has=!!db.home.photo,hs=$('homeScreen'),img=$('homeImg');
+  img.hidden=!has;$('homeEmpty').hidden=has;
+  if(!has){hs.style.background='';hs.classList.remove('light');return}
+  // 사진 맨 위쪽 색을 화면 배경색으로 써서 사진과 자연스럽게 이어지게 함
+  img.onload=()=>{
+    try{
+      const c=document.createElement('canvas');c.width=48;c.height=72;
+      const x=c.getContext('2d');x.drawImage(img,0,0,48,72);
+      const d=x.getImageData(0,0,48,3).data;let r=0,g=0,b=0,n=d.length/4;
+      for(let i=0;i<d.length;i+=4){r+=d[i];g+=d[i+1];b+=d[i+2]}
+      r=Math.round(r/n);g=Math.round(g/n);b=Math.round(b/n);
+      hs.style.background='rgb('+r+','+g+','+b+')';
+      hs.classList.toggle('light',(0.299*r+0.587*g+0.114*b)>150);
+    }catch(e){hs.style.background='';hs.classList.remove('light')}
+  };
+  img.src=db.home.photo;
 }
 function drawHome(){
   const d=new Date();
