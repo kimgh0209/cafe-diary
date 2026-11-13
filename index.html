@@ -12,6 +12,7 @@
 <link rel="apple-touch-icon" href="icon-192.png">
 <title>맛집 지도 일기</title>
 <script src="config.js"></script>
+<script src="https://unpkg.com/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css">
@@ -103,6 +104,17 @@ body.trip .ibtn{color:var(--trip)}
 .mbtn .t{font-size:18px;font-weight:600}
 .mbtn .s{font-size:13px;opacity:.85}
 .mbtn:hover{background:rgba(30,22,18,.55)}
+.home .outlink{margin-top:6px;border:0;background:none;color:#fff;opacity:.8;font-size:12px;text-decoration:underline;cursor:pointer;padding:2px 0;text-shadow:0 1px 6px rgba(0,0,0,.5)}
+.home .outlink[hidden]{display:none}
+
+/* 로그인 */
+.login{z-index:900;background:var(--bg)}
+.login .page{max-width:420px;justify-content:center;box-shadow:none;background:var(--bg)}
+.login form{display:grid;gap:12px;margin-top:18px}
+.login h1{margin:0;font-size:26px}
+.login .sub{color:var(--muted);margin-top:4px}
+.login .err{color:#c0392b;font-size:14px;min-height:20px}
+.login .btn{padding:11px 14px;font-size:16px}
 
 /* 목록 */
 .stat{display:flex;gap:16px;margin-bottom:14px;color:var(--muted);font-size:13px}
@@ -125,7 +137,7 @@ body.trip .tag{background:color-mix(in srgb,var(--trip) 18%,var(--bg));color:var
 
 /* 폼 */
 label.lbl{display:block;font-size:12px;color:var(--muted);letter-spacing:.04em;margin:0 0 4px}
-input[type=text],input[type=date],input[type=time],input[type=number],textarea{
+input[type=text],input[type=email],input[type=password],input[type=date],input[type=time],input[type=number],textarea{
   width:100%;font:inherit;font-size:16px;color:var(--fg);background:var(--bg);border:1px solid var(--line);
   border-radius:8px;padding:9px 10px}
 textarea{resize:vertical;min-height:64px}
@@ -344,7 +356,7 @@ body.trip .results .manual{color:var(--trip)}
   <input type="file" id="homeFile" accept="image/*" hidden>
   <div class="inner">
     <div class="top">
-      <div><h1>우리의 기록</h1><div class="date" id="homeDate"></div></div>
+      <div><h1>우리의 기록</h1><div class="date" id="homeDate"></div><div class="date" id="syncState"></div><button class="outlink" id="logoutBtn" type="button" hidden>로그아웃</button></div>
       <button class="cam" id="homeCam" type="button" aria-label="배경 사진 바꾸기">
         <svg viewBox="0 0 24 24"><path d="M4 8h3l2-2h6l2 2h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg></button>
     </div>
@@ -357,6 +369,20 @@ body.trip .results .manual{color:var(--trip)}
         <span><div class="t">여행</div><div class="s" id="homeTripSub"></div></span></button>
     </div>
   </div>
+</div>
+
+<!-- 로그인 -->
+<div class="screen login" id="loginScreen" hidden>
+  <div class="page"><div class="scroll" style="flex:none">
+    <h1>우리의 기록</h1>
+    <div class="sub">가족 계정으로 로그인해 주세요</div>
+    <form id="loginForm">
+      <div><label class="lbl" for="lEmail">이메일</label><input type="email" id="lEmail" autocomplete="username" required></div>
+      <div><label class="lbl" for="lPw">비밀번호</label><input type="password" id="lPw" autocomplete="current-password" required></div>
+      <div class="err" id="lErr" role="alert"></div>
+      <button class="btn on" type="submit" id="lBtn">로그인</button>
+    </form>
+  </div></div>
 </div>
 
 <nav class="tabs"><div class="in">
@@ -405,8 +431,10 @@ const idb={
 let db={places:[],trips:[],home:{photo:''}}, cur=null, curTrip=null, curStop=null, activeTrip=null, section=null, saveTimer;
 function setSaved(t){document.querySelectorAll('.saved').forEach(e=>e.textContent=t)}
 async function save(){
-  try{await idb.set('db',db);setSaved('저장됨 '+new Date().toLocaleTimeString('ko-KR'))}
+  let sc=null;
+  try{sc=stamp();await idb.set('db',db);setSaved('저장됨 '+new Date().toLocaleTimeString('ko-KR'))}
   catch(e){setSaved('저장하지 못했어요. 브라우저 저장 공간을 확인해 주세요.')}
+  syncPush(sc);
 }
 function queueSave(){clearTimeout(saveTimer);saveTimer=setTimeout(save,300)}
 
@@ -881,6 +909,138 @@ $('sBack').onclick=()=>{
   if(curStop&&curStop.lat)MAP.pan(curStop.lat,curStop.lng);
 };
 
+/* 가족 공유 (Supabase): 로그인한 가족만 같은 기록을 보고 씁니다 */
+const SB_URL=(window.APP_CONFIG&&window.APP_CONFIG.supabaseUrl)||'', SB_KEY=(window.APP_CONFIG&&window.APP_CONFIG.supabaseKey)||'';
+let sb=null,sbUser=null,syncOn=false,pushing=false,pendingPush=false,channel=null;
+let synced={}; // 서버에 올려 둔 기록의 지문 {id:{h,k}}
+const seen={}; // 마지막으로 확인한 지문 (수정 시각을 찍기 위함)
+function canon(v){
+  if(Array.isArray(v))return v.map(canon);
+  if(v&&typeof v==='object'){const o={};Object.keys(v).sort().forEach(k=>{if(k!=='_u')o[k]=canon(v[k])});return o}
+  return v;
+}
+const hashOf=o=>JSON.stringify(canon(o));
+function localItems(){
+  return [{id:'home',kind:'home',obj:db.home}].concat(db.places.map(o=>({id:o.id,kind:'place',obj:o})),db.trips.map(o=>({id:o.id,kind:'trip',obj:o})));
+}
+function stamp(){
+  const now=new Date().toISOString();
+  const sc=localItems().map(it=>Object.assign({},it,{h:hashOf(it.obj)}));
+  sc.forEach(it=>{if(seen[it.id]!==it.h){it.obj._u=now;seen[it.id]=it.h}});
+  return sc;
+}
+function setSync(t){$('syncState').textContent=t}
+function isEditing(id){
+  if(!$('editScreen').hidden&&cur&&cur.id===id)return true;
+  if(!$('tripScreen').hidden&&curTrip&&curTrip.id===id)return true;
+  if(!$('stopScreen').hidden&&activeTrip&&activeTrip.id===id)return true;
+  return false;
+}
+function findLocal(id,kind){return kind==='home'?db.home:(kind==='place'?db.places:db.trips).find(x=>x.id===id)}
+function replaceLocal(r){
+  const o=Object.assign({},r.data);o._u=r.updated_at;
+  if(r.kind==='home'){db.home=Object.assign({photo:''},o);return db.home}
+  const arr=r.kind==='place'?db.places:db.trips,n=(r.kind==='place'?norm:normTrip)(o),i=arr.findIndex(x=>x.id===r.id);
+  if(i>=0)arr[i]=n;else arr.push(n);
+  return n;
+}
+function adopt(r){const o=replaceLocal(r),h=hashOf(o);seen[r.id]=h;synced[r.id]={h,k:r.kind};return true}
+// 서버의 기록 하나를 내 폰에 합치기. 바뀌었으면 true
+function mergeRow(r){
+  if(isEditing(r.id))return false;
+  const loc=findLocal(r.id,r.kind);
+  if(r.deleted){
+    if(loc&&r.kind!=='home'){const arr=r.kind==='place'?db.places:db.trips;arr.splice(arr.indexOf(loc),1);delete synced[r.id];delete seen[r.id];return true}
+    return false;
+  }
+  if(!loc){return synced[r.id]?false:adopt(r)} // 내가 지운 것이면 삭제 표시를 올리고, 아니면 새 기록으로 받음
+  if(hashOf(loc)===hashOf(r.data||{})){const h=hashOf(loc);synced[r.id]={h,k:r.kind};return false}
+  const lu=Date.parse(loc._u||0)||0,ru=Date.parse(r.updated_at)||0;
+  return ru>lu?adopt(r):false;
+}
+function refreshUI(){
+  if(activeTrip)activeTrip=db.trips.find(t=>t.id===activeTrip.id)||null;
+  drawMarkers();
+  if(!$('listScreen').hidden)drawList();
+  if(!$('homeScreen').hidden)drawHome();
+}
+async function syncPull(){
+  const {data,error}=await sb.from('items').select('*');
+  if(error)throw error;
+  let changed=false;const ids=new Set();
+  data.forEach(r=>{ids.add(r.id);if(mergeRow(r))changed=true});
+  Object.keys(synced).forEach(id=>{if(!ids.has(id))delete synced[id]}); // 서버에 없으면 다시 올림
+  if(changed){await idb.set('db',db);refreshUI()}
+  await idb.set('synced',synced);
+}
+async function syncPush(sc0){
+  if(!sb||!sbUser||!syncOn)return;
+  if(pushing){pendingPush=true;return}
+  pushing=true;
+  try{
+    let first=true;
+    do{
+      pendingPush=false;
+      const sc=(first&&sc0)||stamp();first=false;
+      const now=new Date().toISOString(),present=new Set(),rows=[];
+      sc.forEach(it=>{
+        present.add(it.id);const s=synced[it.id];
+        if(s&&s.h===it.h)return;
+        if(it.kind==='home'&&!it.obj.photo&&!s)return;
+        rows.push({id:it.id,kind:it.kind,data:it.obj,updated_at:it.obj._u||now,deleted:false,_h:it.h});
+      });
+      Object.keys(synced).forEach(id=>{if(!present.has(id))rows.push({id,kind:synced[id].k,data:{},updated_at:now,deleted:true,_h:null})});
+      for(let i=0;i<rows.length;i+=4){
+        const chunk=rows.slice(i,i+4);
+        const {error}=await sb.from('items').upsert(chunk.map(({_h,...r})=>r));
+        if(error)throw error;
+        chunk.forEach(r=>{if(r.deleted)delete synced[r.id];else synced[r.id]={h:r._h,k:r.kind}});
+      }
+      if(rows.length)await idb.set('synced',synced);
+    }while(pendingPush);
+    setSync('가족과 동기화됨 '+new Date().toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'}));
+  }catch(e){setSync('오프라인 · 연결되면 자동으로 올라가요');console.warn('동기화 실패',e)}
+  pushing=false;
+}
+function startRealtime(){
+  if(channel)sb.removeChannel(channel);
+  channel=sb.channel('items-sync').on('postgres_changes',{event:'*',schema:'public',table:'items'},p=>{
+    const r=p.new;
+    if(!r||!r.id||!r.data){syncPull().catch(()=>{});return}
+    if(mergeRow(r)){idb.set('db',db);idb.set('synced',synced);refreshUI()}
+  }).subscribe();
+}
+async function startSync(){
+  syncOn=true;setSync('동기화 중…');
+  try{await syncPull();await syncPush();startRealtime()}
+  catch(e){setSync('오프라인 · 연결되면 자동으로 올라가요');console.warn('동기화 시작 실패',e)}
+}
+function showLogin(){$('loginScreen').hidden=false;$('logoutBtn').hidden=true}
+$('loginForm').onsubmit=async e=>{
+  e.preventDefault();$('lErr').textContent='';$('lBtn').disabled=true;
+  try{
+    const {data,error}=await sb.auth.signInWithPassword({email:$('lEmail').value.trim(),password:$('lPw').value});
+    if(error){$('lErr').textContent=/network|fetch/i.test(error.message)?'인터넷에 연결되어 있는지 확인해 주세요.':'이메일이나 비밀번호가 맞지 않아요.';return}
+    sbUser=data.user;$('lPw').value='';$('loginScreen').hidden=true;$('logoutBtn').hidden=false;startSync();
+  }catch(err){$('lErr').textContent='로그인하지 못했어요. 인터넷 연결을 확인해 주세요.'}
+  finally{$('lBtn').disabled=false}
+};
+$('logoutBtn').onclick=async()=>{
+  syncOn=false;if(channel){sb.removeChannel(channel);channel=null}
+  try{await sb.auth.signOut()}catch(e){}
+  sbUser=null;setSync('');showLogin();
+};
+async function initAuth(){
+  if(!SB_URL||!SB_KEY||!window.supabase)return;
+  sb=window.supabase.createClient(SB_URL,SB_KEY);
+  let s=null;try{const r=await sb.auth.getSession();s=r.data.session}catch(e){}
+  if(s){sbUser=s.user;$('logoutBtn').hidden=false;startSync()}
+  else if(navigator.onLine)showLogin();
+  else setSync('오프라인 · 이 폰에만 저장 중');
+  window.addEventListener('online',()=>{if(sbUser)startSync();else showLogin()});
+  document.addEventListener('visibilitychange',()=>{if(!document.hidden&&sbUser&&syncOn)syncPull().then(()=>syncPush()).catch(()=>{})});
+}
+
 /* 시작 */
 (async function(){
   let d; try{d=await idb.get('db')}catch(e){}
@@ -888,12 +1048,15 @@ $('sBack').onclick=()=>{
     try{const old=JSON.parse(localStorage.getItem('cafe-map-v1'));if(old&&old.places)d=old}catch(e){}
   }
   const fresh=!d;
-  if(fresh)d={places:[norm({id:'clover',name:'클로버',lat:37.2703,lng:127.1500,date:today()})]};
+  if(fresh)d={places:SB_URL?[]:[norm({id:'clover',name:'클로버',lat:37.2703,lng:127.1500,date:today()})]};
   d.places=(d.places||[]).map(norm);d.trips=(d.trips||[]).map(normTrip);d.home=Object.assign({photo:''},d.home);
   db=d;
+  try{synced=(await idb.get('synced'))||{}}catch(e){}
+  localItems().forEach(it=>seen[it.id]=hashOf(it.obj));
   await initMap();
   if(db.places[0])MAP.setView(db.places[0].lat,db.places[0].lng,16);
   drawHome();
+  initAuth();
 })();
 if('serviceWorker' in navigator&&location.protocol.startsWith('http'))navigator.serviceWorker.register('sw.js').catch(()=>{});
 </script>
