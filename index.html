@@ -11,6 +11,7 @@
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-192.png">
 <title>맛집 지도 일기</title>
+<script src="config.js"></script>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css">
@@ -126,6 +127,13 @@ section.sec h2{margin:0;font-size:16px;display:flex;justify-content:space-betwee
 .leaflet-container{font-family:var(--font)}
 #map{z-index:0}
 .search[hidden]{display:none}
+
+/* 카카오맵 핀 (이름표가 핀 위에 표시됨) */
+.kpin{position:relative;width:34px;height:34px;transform:translateY(-7px);cursor:pointer}
+.kpin .plabel{position:absolute;left:50%;bottom:100%;transform:translateX(-50%);margin-bottom:8px;white-space:nowrap;
+  background:var(--panel);color:var(--fg);font-size:12px;padding:2px 8px;border-radius:999px;border:1px solid var(--line);
+  box-shadow:0 1px 4px rgba(0,0,0,.25)}
+.kpin .plabel:empty{display:none}
 
 /* 가게 검색 */
 .search{position:fixed;z-index:390;top:calc(12px + env(safe-area-inset-top,0px));left:0;right:0;display:flex;flex-direction:column;align-items:center;
@@ -259,28 +267,113 @@ async function save(){
 }
 function queueSave(){clearTimeout(saveTimer);saveTimer=setTimeout(save,300)}
 
-/* 지도 */
-const map=L.map('map',{zoomControl:false}).setView([37.2703,127.1500],16);
-L.control.zoom({position:'bottomright'}).addTo(map);
-/* 깔끔한 벡터 지도(OpenFreeMap). 불러오지 못하면 기본 OpenStreetMap 사용 */
-try{
-  L.maplibreGL({style:'https://tiles.openfreemap.org/styles/liberty',
-    attribution:'&copy; OpenFreeMap &copy; OpenMapTiles &copy; OpenStreetMap'}).addTo(map);
-}catch(e){
-  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'&copy; OpenStreetMap'}).addTo(map);
+/* 지도: 카카오 키가 있으면 카카오맵, 없으면 OpenFreeMap(Leaflet) */
+const KAKAO_KEY=(window.APP_CONFIG&&window.APP_CONFIG.kakaoKey)||'';
+let MAP=null;
+const pinHTML=kind=>'<div class="pin"><span>'+(kind==='bakery'?'🥐':'☕')+'</span></div>';
+function distM(la1,lo1,la2,lo2){
+  const R=6371000,r=Math.PI/180,dl=(la2-la1)*r,dg=(lo2-lo1)*r;
+  const a=Math.sin(dl/2)**2+Math.cos(la1*r)*Math.cos(la2*r)*Math.sin(dg/2)**2;
+  return 2*R*Math.asin(Math.sqrt(a));
 }
-const markers={};
-function pinIcon(kind){return L.divIcon({className:'',html:'<div class="pin"><span>'+(kind==='bakery'?'🥐':'☕')+'</span></div>',iconSize:[34,34],iconAnchor:[17,34]})}
-function drawMarkers(){
-  Object.values(markers).forEach(m=>m.remove());
-  for(const k in markers)delete markers[k];
-  db.places.forEach(p=>{
-    const m=L.marker([p.lat,p.lng],{icon:pinIcon(p.kind)}).addTo(map);
-    m.bindTooltip(p.name||'이름 없는 곳',{direction:'top',offset:[0,-34]});
-    m.on('click',()=>openEdit(p.id));
-    markers[p.id]=m;
+const START=[37.2703,127.1500];
+
+function makeLeafletMap(){
+  const map=L.map('map',{zoomControl:false}).setView(START,16);
+  L.control.zoom({position:'bottomright'}).addTo(map);
+  try{
+    L.maplibreGL({style:'https://tiles.openfreemap.org/styles/liberty',
+      attribution:'&copy; OpenFreeMap &copy; OpenMapTiles &copy; OpenStreetMap'}).addTo(map);
+  }catch(e){
+    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'&copy; OpenStreetMap'}).addTo(map);
+  }
+  let pins=[];
+  const kindOf=pr=>/bakery|pastry|confectionery/.test(pr.osm_value||'')?'bakery':'cafe';
+  const addrOf=pr=>[[pr.street,pr.housenumber].filter(Boolean).join(' '),pr.district,pr.city||pr.county].filter(Boolean).join(' · ');
+  return {
+    setView:(lat,lng,z)=>map.setView([lat,lng],z||16),
+    pan:(lat,lng)=>map.panTo([lat,lng]),
+    cursor:on=>{map.getContainer().style.cursor=on?'crosshair':''},
+    onClick:fn=>map.on('click',e=>fn(e.latlng.lat,e.latlng.lng)),
+    drawPins(places,open){
+      pins.forEach(m=>m.remove());
+      pins=places.map(p=>{
+        const icon=L.divIcon({className:'',html:pinHTML(p.kind),iconSize:[34,34],iconAnchor:[17,34]});
+        const m=L.marker([p.lat,p.lng],{icon}).addTo(map);
+        m.bindTooltip(p.name||'이름 없는 곳',{direction:'top',offset:[0,-34]});
+        m.on('click',()=>open(p.id));return m;
+      });
+    },
+    async search(q){
+      const c=map.getCenter();
+      const get=async s=>{
+        const r=await fetch('https://photon.komoot.io/api/?limit=10&lat='+c.lat+'&lon='+c.lng+'&q='+encodeURIComponent(s));
+        const j=await r.json();return (j.features||[]).filter(f=>(f.properties.countrycode||'KR')==='KR');
+      };
+      let feats=await get(q);
+      if(!feats.length&&q.includes(' '))feats=await get(q.split(/\s+/)[0]);
+      return feats.map(f=>{const pr=f.properties,k=kindOf(pr);
+        return {name:pr.name||'',addr:addrOf(pr),lat:f.geometry.coordinates[1],lng:f.geometry.coordinates[0],kind:k,
+          tag:pr.osm_value==='cafe'?'카페':k==='bakery'?'빵집':''}});
+    }
+  };
+}
+
+function makeKakaoMap(){
+  const K=kakao.maps;
+  const map=new K.Map($('map'),{center:new K.LatLng(START[0],START[1]),level:3});
+  map.addControl(new K.ZoomControl(),K.ControlPosition.RIGHT);
+  const places=new K.services.Places();
+  let pins=[];
+  return {
+    setView:(lat,lng)=>{map.setLevel(3);map.setCenter(new K.LatLng(lat,lng))},
+    pan:(lat,lng)=>map.panTo(new K.LatLng(lat,lng)),
+    cursor:on=>map.setCursor(on?'crosshair':''),
+    onClick:fn=>K.event.addListener(map,'click',e=>fn(e.latLng.getLat(),e.latLng.getLng())),
+    drawPins(list,open){
+      pins.forEach(o=>o.setMap(null));
+      pins=list.map(p=>{
+        const el=document.createElement('div');el.className='kpin';
+        el.innerHTML=pinHTML(p.kind)+'<div class="plabel"></div>';
+        el.querySelector('.plabel').textContent=p.name||'';
+        el.onclick=ev=>{ev.stopPropagation();open(p.id)};
+        const o=new K.CustomOverlay({position:new K.LatLng(p.lat,p.lng),content:el,yAnchor:1,clickable:true});
+        o.setMap(map);return o;
+      });
+    },
+    search(q){
+      const c=map.getCenter();
+      return new Promise((ok,no)=>{
+        places.keywordSearch(q,(data,status)=>{
+          if(status===K.services.Status.OK)ok(data.map(d=>{
+            const bak=/베이커리|제과|빵/.test(d.category_name||'');
+            return {name:d.place_name,addr:d.road_address_name||d.address_name,lat:+d.y,lng:+d.x,
+              kind:bak?'bakery':'cafe',tag:d.category_group_code==='CE7'?'카페':bak?'빵집':''};
+          }));
+          else if(status===K.services.Status.ZERO_RESULT)ok([]);
+          else no(new Error(status));
+        },{location:c});
+      });
+    }
+  };
+}
+
+function loadKakao(){
+  return new Promise((ok,no)=>{
+    const s=document.createElement('script');
+    s.src='https://dapi.kakao.com/v2/maps/sdk.js?appkey='+encodeURIComponent(KAKAO_KEY)+'&libraries=services&autoload=false';
+    s.onload=()=>kakao.maps.load(ok);s.onerror=()=>no(new Error('kakao'));
+    document.head.appendChild(s);
   });
 }
+async function initMap(){
+  if(KAKAO_KEY){
+    try{await loadKakao();MAP=makeKakaoMap()}catch(e){console.warn('카카오 지도를 불러오지 못해 기본 지도를 사용합니다',e)}
+  }
+  if(!MAP)MAP=makeLeafletMap();
+  MAP.onClick(onMapClick);
+}
+function drawMarkers(){if(MAP)MAP.drawPins(db.places,openEdit)}
 
 /* 화면 전환 */
 let mode=null; // {type:'add'} | {type:'move', place}
@@ -292,63 +385,51 @@ function setTab(t){
 $('tabMap').onclick=()=>{cancelMode();setTab('map')};
 $('tabList').onclick=()=>{cancelMode();setTab('list')};
 $('tabAdd').onclick=()=>{setTab('map');startMode({type:'add'},'지도에서 방문한 곳을 눌러 주세요')};
-function startMode(m,text){mode=m;$('bannerText').textContent=text;$('banner').hidden=false;$('search').hidden=true;map.getContainer().style.cursor='crosshair'}
-function cancelMode(){mode=null;$('banner').hidden=true;$('search').hidden=false;map.getContainer().style.cursor=''}
+function startMode(m,text){mode=m;$('bannerText').textContent=text;$('banner').hidden=false;$('search').hidden=true;MAP.cursor(true)}
+function cancelMode(){mode=null;$('banner').hidden=true;$('search').hidden=false;if(MAP)MAP.cursor(false)}
 $('bannerCancel').onclick=()=>{const m=mode;cancelMode();if(m&&m.type==='move')openEdit(m.place.id)};
-map.on('click',e=>{
+function onMapClick(lat,lng){
+  hideResults();
   if(!mode)return;
   const m=mode;cancelMode();
-  if(m.type==='add'){const p=newPlace(e.latlng.lat,e.latlng.lng);p.name=m.name||'';db.places.push(p);save();drawMarkers();openEdit(p.id,true)}
-  else{m.place.lat=e.latlng.lat;m.place.lng=e.latlng.lng;save();drawMarkers();openEdit(m.place.id)}
-});
+  if(m.type==='add'){const p=newPlace(lat,lng);p.name=m.name||'';db.places.push(p);save();drawMarkers();openEdit(p.id,true)}
+  else{m.place.lat=lat;m.place.lng=lng;save();drawMarkers();openEdit(m.place.id)}
+}
 
-/* 가게 검색 (Photon: OpenStreetMap 기반 무료 검색) */
+/* 가게 검색: 카카오 키가 있으면 카카오 장소 검색, 없으면 OpenStreetMap 기반 검색 */
 let searchTimer,searchSeq=0;
 function hideResults(){$('results').hidden=true}
-function addrOf(pr){return [[pr.street,pr.housenumber].filter(Boolean).join(' '),pr.district,pr.city||pr.county].filter(Boolean).join(' · ')}
-function kindOf(pr){return /bakery|pastry|confectionery/.test(pr.osm_value||'')?'bakery':'cafe'}
 async function runSearch(q){
   const my=++searchSeq,box=$('results');
-  const c=map.getCenter();
-  let feats=[];
-  const get=async s=>{
-    const r=await fetch('https://photon.komoot.io/api/?limit=10&lat='+c.lat+'&lon='+c.lng+'&q='+encodeURIComponent(s));
-    const j=await r.json();return (j.features||[]).filter(f=>(f.properties.countrycode||'KR')==='KR');
-  };
-  try{
-    feats=await get(q);
-    // "스타벅스 동백"처럼 지역을 붙여서 결과가 없으면 첫 단어만으로 다시 검색 (지도 중심에서 가까운 순)
-    if(!feats.length&&q.includes(' '))feats=await get(q.split(/\s+/)[0]);
-  }catch(e){
+  let items;
+  try{items=await MAP.search(q)}catch(e){
     if(my!==searchSeq)return;
     box.innerHTML='<div class="none">검색에 연결하지 못했어요. 인터넷을 확인해 주세요.</div>';box.hidden=false;return;
   }
   if(my!==searchSeq)return;
   box.innerHTML='';
-  feats.forEach(f=>{
-    const pr=f.properties,b=document.createElement('button');b.type='button';
-    const t=pr.osm_value==='cafe'?'카페':kindOf(pr)==='bakery'?'빵집':'';
+  items.forEach(it=>{
+    const b=document.createElement('button');b.type='button';
     b.innerHTML='<div class="rn"></div><div class="rs"></div>';
-    b.querySelector('.rn').textContent=pr.name||addrOf(pr);
-    if(t){const s=document.createElement('span');s.className='tag';s.textContent=t;b.querySelector('.rn').appendChild(s)}
-    b.querySelector('.rs').textContent=addrOf(pr);
-    b.onclick=()=>pickResult(f);
+    b.querySelector('.rn').textContent=it.name||it.addr;
+    if(it.tag){const s=document.createElement('span');s.className='tag';s.textContent=it.tag;b.querySelector('.rn').appendChild(s)}
+    b.querySelector('.rs').textContent=it.addr;
+    b.onclick=()=>pickResult(it);
     box.appendChild(b);
   });
-  if(!feats.length){const d=document.createElement('div');d.className='none';d.textContent='검색 결과가 없어요.';box.appendChild(d)}
+  if(!items.length){const d=document.createElement('div');d.className='none';d.textContent='검색 결과가 없어요.';box.appendChild(d)}
   const m=document.createElement('button');m.type='button';m.className='manual';
   m.textContent='"'+q+'" 이름으로 지도에서 직접 찍기';
   m.onclick=()=>{hideResults();$('q').value='';startMode({type:'add',name:q},'지도에서 방문한 곳을 눌러 주세요')};
   box.appendChild(m);
   box.hidden=false;
 }
-function pickResult(f){
-  const pr=f.properties,[lng,lat]=f.geometry.coordinates,name=pr.name||'';
+function pickResult(it){
   hideResults();$('q').value='';$('q').blur();
-  let p=db.places.find(x=>x.name===name&&map.distance([x.lat,x.lng],[lat,lng])<100);
-  if(!p){p=newPlace(lat,lng);p.name=name;p.kind=kindOf(pr);db.places.push(p);save();drawMarkers()}
-  map.setView([lat,lng],17);
-  openEdit(p.id,!name);
+  let p=db.places.find(x=>x.name===it.name&&distM(x.lat,x.lng,it.lat,it.lng)<100);
+  if(!p){p=newPlace(it.lat,it.lng);p.name=it.name;p.kind=it.kind;db.places.push(p);save();drawMarkers()}
+  MAP.setView(it.lat,it.lng,17);
+  openEdit(p.id,!it.name);
 }
 $('q').oninput=()=>{
   clearTimeout(searchTimer);const q=$('q').value.trim();
@@ -356,7 +437,6 @@ $('q').oninput=()=>{
   searchTimer=setTimeout(()=>runSearch(q),350);
 };
 $('q').onfocus=()=>{if($('results').children.length&&$('q').value.trim().length>=2)$('results').hidden=false};
-map.on('click',hideResults);
 
 /* 목록 */
 function avg(p){const r=[p.coffee.rating,p.bake.rating].filter(Boolean);return r.length?r.reduce((a,b)=>a+b)/r.length:0}
@@ -424,7 +504,7 @@ const fields=[
 ];
 fields.forEach(([id,get,set])=>{$(id).oninput=()=>{
   set(cur,$(id).value);queueSave();
-  if(id==='name'){$('pname').textContent=cur.name||'새 기록';markers[cur.id]&&markers[cur.id].setTooltipContent(cur.name||'이름 없는 곳')}
+  if(id==='name'){$('pname').textContent=cur.name||'새 기록';drawMarkers()}
   if(id.endsWith('Price'))drawTotal();
 }});
 
@@ -448,7 +528,7 @@ function closeEdit(){
   $('editScreen').hidden=true;
   drawMarkers();
   if(!$('listScreen').hidden)drawList();
-  if(cur&&cur.lat)map.panTo([cur.lat,cur.lng]);
+  if(cur&&cur.lat)MAP.pan(cur.lat,cur.lng);
 }
 $('backBtn').onclick=closeEdit;
 $('delBtn').onclick=()=>{
@@ -458,7 +538,7 @@ $('delBtn').onclick=()=>{
 };
 $('moveBtn').onclick=()=>{const p=cur;clearTimeout(saveTimer);save();$('editScreen').hidden=true;$('listScreen').hidden=true;
   $('tabMap').classList.add('on');$('tabList').classList.remove('on');
-  map.panTo([p.lat,p.lng]);startMode({type:'move',place:p},'새 위치를 지도에서 눌러 주세요')};
+  MAP.pan(p.lat,p.lng);startMode({type:'move',place:p},'새 위치를 지도에서 눌러 주세요')};
 
 /* 시작 */
 (async function(){
@@ -468,8 +548,9 @@ $('moveBtn').onclick=()=>{const p=cur;clearTimeout(saveTimer);save();$('editScre
   }
   if(!d||!d.places||!d.places.length)d={places:[norm({id:'clover',name:'클로버',lat:37.2703,lng:127.1500,date:today()})]};
   d.places.forEach(norm);db=d;
+  await initMap();
   drawMarkers();
-  if(db.places[0])map.setView([db.places[0].lat,db.places[0].lng],16);
+  if(db.places[0])MAP.setView(db.places[0].lat,db.places[0].lng,16);
 })();
 if('serviceWorker' in navigator&&location.protocol.startsWith('http'))navigator.serviceWorker.register('sw.js').catch(()=>{});
 </script>
