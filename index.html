@@ -1,0 +1,397 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#b8553a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="맛집일기">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>맛집 지도 일기</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css">
+<script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+<script src="https://unpkg.com/@maplibre/maplibre-gl-leaflet@0.0.22/leaflet-maplibre-gl.js"></script>
+<style>
+/* 레이아웃: 전체 화면 지도 + 하단 탭(지도/목록/추가) + 위로 올라오는 기록 화면 */
+:root{
+  --bg:#f6f3ee; --panel:#fffdf9; --fg:#2b2622; --muted:#7d746b; --line:#e5ddd2;
+  --accent:#b8553a; --accent-soft:#f3dcd3; --star:#e8a317; --star-off:#ddd3c4;
+  --font:'Pretendard','Apple SD Gothic Neo','Malgun Gothic',system-ui,sans-serif;
+  --tabh:62px;
+}
+@media (prefers-color-scheme:dark){:root{
+  --bg:#1c1916; --panel:#26221e; --fg:#f0e9e0; --muted:#a39a8f; --line:#3a342d;
+  --accent:#e08565; --accent-soft:#4a2f26; --star:#f0b83a; --star-off:#4a4237;}}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;margin:0;overflow:hidden}
+body{background:var(--bg);color:var(--fg);font:15px/1.5 var(--font);overscroll-behavior:none}
+button{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+#map{position:fixed;inset:0;bottom:calc(var(--tabh) + env(safe-area-inset-bottom,0px))}
+
+/* 하단 탭 */
+.tabs{position:fixed;left:0;right:0;bottom:0;z-index:500;display:flex;justify-content:center;
+  background:var(--panel);border-top:1px solid var(--line);
+  padding:0 env(safe-area-inset-right,0px) env(safe-area-inset-bottom,0px) env(safe-area-inset-left,0px)}
+.tabs .in{display:grid;grid-template-columns:repeat(3,1fr);width:100%;max-width:520px;height:var(--tabh)}
+.tab{background:none;border:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;
+  color:var(--muted);font-size:12px;cursor:pointer}
+.tab svg{width:24px;height:24px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.tab.on{color:var(--accent)}
+.tab.add{color:var(--accent)}
+.tab.add .plus{width:44px;height:44px;border-radius:50%;background:var(--accent);color:#fff;display:grid;place-items:center;margin-top:-14px;
+  box-shadow:0 3px 10px rgba(0,0,0,.25)}
+.tab.add .plus svg{stroke:#fff;width:24px;height:24px}
+
+/* 안내 띠 */
+.banner{position:fixed;z-index:600;left:50%;transform:translateX(-50%);top:calc(12px + env(safe-area-inset-top,0px));
+  background:var(--fg);color:var(--bg);border-radius:999px;padding:8px 8px 8px 16px;display:flex;gap:10px;align-items:center;
+  font-size:14px;max-width:calc(100% - 32px);box-shadow:0 4px 14px rgba(0,0,0,.3)}
+.banner[hidden]{display:none}
+.banner button{border:0;border-radius:999px;background:var(--bg);color:var(--fg);padding:4px 12px;cursor:pointer}
+
+/* 겹쳐서 뜨는 화면 (목록, 기록) */
+.screen{position:fixed;inset:0;z-index:400;display:flex;justify-content:center;background:rgba(0,0,0,.0)}
+.screen[hidden]{display:none}
+.screen .page{width:100%;max-width:520px;background:var(--panel);display:flex;flex-direction:column;min-height:0;
+  box-shadow:0 0 30px rgba(0,0,0,.18)}
+#listScreen{bottom:calc(var(--tabh) + env(safe-area-inset-bottom,0px))}
+#editScreen{z-index:700}
+.bar{display:flex;align-items:center;gap:8px;min-height:54px;flex:none;border-bottom:1px solid var(--line);
+  padding:env(safe-area-inset-top,0px) max(12px,env(safe-area-inset-right,0px)) 0 max(12px,env(safe-area-inset-left,0px))}
+.bar h1{flex:1;min-width:0;margin:0;font-size:18px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ibtn{border:0;background:none;color:var(--accent);font-size:15px;cursor:pointer;padding:8px 6px}
+.ibtn.danger{color:#c0392b}
+.scroll{flex:1;overflow-y:auto;min-height:0;-webkit-overflow-scrolling:touch;
+  padding:16px max(16px,env(safe-area-inset-right,0px)) calc(24px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
+
+/* 목록 */
+.stat{display:flex;gap:16px;margin-bottom:14px;color:var(--muted);font-size:13px}
+.stat b{color:var(--fg);font-size:18px;font-variant-numeric:tabular-nums;display:block}
+.card{display:flex;gap:12px;width:100%;text-align:left;background:var(--bg);border:1px solid var(--line);border-radius:12px;
+  padding:10px;margin-bottom:10px;cursor:pointer}
+.card .th{width:64px;height:64px;border-radius:8px;flex:none;background:var(--accent-soft);display:grid;place-items:center;font-size:26px;overflow:hidden}
+.card .th img{width:100%;height:100%;object-fit:cover}
+.card .tx{min-width:0;flex:1}
+.card .nm{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.card .mt{font-size:13px;color:var(--muted)}
+.card .st{font-size:13px;color:var(--star);letter-spacing:1px}
+.empty{color:var(--muted);text-align:center;padding:40px 0}
+
+/* 폼 */
+label.lbl{display:block;font-size:12px;color:var(--muted);letter-spacing:.04em;margin:0 0 4px}
+input[type=text],input[type=date],input[type=number],textarea{
+  width:100%;font:inherit;font-size:16px;color:var(--fg);background:var(--bg);border:1px solid var(--line);
+  border-radius:8px;padding:9px 10px}
+textarea{resize:vertical;min-height:64px}
+.row{display:flex;gap:10px;flex-wrap:wrap}
+.row>div{flex:1;min-width:130px}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:999px;overflow:hidden}
+.seg button{background:var(--bg);border:0;padding:6px 16px;cursor:pointer;font-size:14px}
+.seg button.on{background:var(--accent);color:#fff}
+section.sec{border-top:1px solid var(--line);padding:16px 0;display:grid;gap:12px;margin-top:16px}
+section.sec h2{margin:0;font-size:16px;display:flex;justify-content:space-between;align-items:baseline}
+.stars{display:inline-flex;gap:2px}
+.stars button{background:none;border:0;padding:2px 3px;font-size:30px;line-height:1;cursor:pointer;color:var(--star-off)}
+.stars button.on{color:var(--star)}
+.score{font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums}
+.photos{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:8px}
+.ph{position:relative;aspect-ratio:1;border-radius:8px;overflow:hidden;background:var(--bg)}
+.ph img{width:100%;height:100%;object-fit:cover;display:block}
+.ph button{position:absolute;top:4px;right:4px;border:0;border-radius:50%;width:24px;height:24px;
+  background:rgba(0,0,0,.6);color:#fff;cursor:pointer;line-height:1}
+.add{display:grid;place-items:center;aspect-ratio:1;border:1.5px dashed var(--line);border-radius:8px;
+  color:var(--muted);font-size:13px;cursor:pointer;text-align:center;padding:4px}
+.acid{display:grid;gap:6px}
+.acid input[type=range]{width:100%;accent-color:var(--accent)}
+.acid .ends{display:flex;justify-content:space-between;font-size:12px;color:var(--muted)}
+.acid .now b{color:var(--accent)}
+.price{display:flex;align-items:center;gap:6px}
+.price input{text-align:right;font-variant-numeric:tabular-nums}
+.total{display:flex;justify-content:space-between;align-items:baseline;border-top:1px solid var(--line);padding-top:12px;margin-top:4px}
+.total b{font-size:20px;font-variant-numeric:tabular-nums}
+.saved{font-size:12px;color:var(--muted);text-align:right;min-height:18px}
+.hint{font-size:12px;color:var(--muted)}
+.btn{border:1px solid var(--line);background:var(--bg);border-radius:999px;padding:7px 14px;cursor:pointer;font-size:14px}
+
+.pin{width:34px;height:34px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);background:var(--accent);
+  border:3px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.35);display:grid;place-items:center}
+.pin span{transform:rotate(45deg);font-size:15px;line-height:1}
+.leaflet-container{font-family:var(--font)}
+</style>
+</head>
+<body>
+<div id="map" aria-label="지도"></div>
+
+<div class="banner" id="banner" hidden><span id="bannerText"></span><button type="button" id="bannerCancel">취소</button></div>
+
+<!-- 목록 -->
+<div class="screen" id="listScreen" hidden>
+  <div class="page">
+    <div class="bar"><h1>내가 간 곳</h1></div>
+    <div class="scroll" id="listBody"></div>
+  </div>
+</div>
+
+<!-- 기록 -->
+<div class="screen" id="editScreen" hidden>
+  <div class="page">
+    <div class="bar">
+      <button class="ibtn" id="backBtn" type="button">← 닫기</button>
+      <h1 id="pname"></h1>
+      <button class="ibtn danger" id="delBtn" type="button">삭제</button>
+    </div>
+    <div class="scroll" id="editBody">
+      <div class="row" style="margin-bottom:12px">
+        <div style="flex:2"><label class="lbl" for="name">가게 이름</label><input type="text" id="name"></div>
+        <div><label class="lbl" for="date">방문일</label><input type="date" id="date"></div>
+      </div>
+      <div class="seg" id="kindSeg" style="margin-bottom:12px">
+        <button type="button" data-k="cafe">카페</button><button type="button" data-k="bakery">빵집</button>
+      </div>
+      <div style="margin-bottom:16px">
+        <label class="lbl" for="withWho">같이 간 사람</label>
+        <input type="text" id="withWho" list="withList" placeholder="예: 혼자, 친구 민수, 가족">
+        <datalist id="withList"></datalist>
+      </div>
+
+      <label class="lbl">사진</label>
+      <div class="photos" id="photos"></div>
+      <input type="file" id="file" accept="image/*" multiple hidden>
+
+      <section class="sec">
+        <h2><span>커피</span><span class="score" id="coffeeScore"></span></h2>
+        <div><label class="lbl">맛 별점</label><div class="stars" id="coffeeStars"></div></div>
+        <div class="acid">
+          <label class="lbl" for="acidity">산도</label>
+          <input type="range" id="acidity" min="1" max="5" step="1">
+          <div class="ends"><span>고소·쌉쌀</span><span>상큼·과일</span></div>
+          <div class="now" id="acidNow"></div>
+        </div>
+        <div><label class="lbl" for="coffeeMenu">마신 메뉴</label><input type="text" id="coffeeMenu" placeholder="예: 핸드드립 에티오피아"></div>
+        <div><label class="lbl" for="coffeePrice">커피 금액</label>
+          <div class="price"><input type="number" id="coffeePrice" inputmode="numeric" min="0" step="100" placeholder="0"><span>원</span></div></div>
+        <div><label class="lbl" for="coffeeNote">커피 메모</label><textarea id="coffeeNote" placeholder="향, 바디감, 끝맛 등"></textarea></div>
+      </section>
+
+      <section class="sec">
+        <h2><span>빵 · 디저트</span><span class="score" id="bakeScore"></span></h2>
+        <div><label class="lbl">맛 별점</label><div class="stars" id="bakeStars"></div></div>
+        <div><label class="lbl" for="bakeMenu">먹은 메뉴</label><input type="text" id="bakeMenu" placeholder="예: 소금빵, 바스크 치즈케이크"></div>
+        <div><label class="lbl" for="bakePrice">빵 · 디저트 금액</label>
+          <div class="price"><input type="number" id="bakePrice" inputmode="numeric" min="0" step="100" placeholder="0"><span>원</span></div></div>
+        <div><label class="lbl" for="bakeNote">빵 · 디저트 메모</label><textarea id="bakeNote" placeholder="식감, 단맛, 재방문 의사 등"></textarea></div>
+      </section>
+
+      <section class="sec">
+        <div class="total"><span>이번 방문 지출</span><b id="totalPrice">0원</b></div>
+        <label class="lbl" for="memo">전체 메모</label>
+        <textarea id="memo" placeholder="분위기, 주차, 한줄평"></textarea>
+        <div><button class="btn" id="moveBtn" type="button">핀 위치 옮기기</button></div>
+        <div class="saved" id="saved"></div>
+      </section>
+    </div>
+  </div>
+</div>
+
+<nav class="tabs"><div class="in">
+  <button class="tab on" id="tabMap" type="button">
+    <svg viewBox="0 0 24 24"><path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>지도</button>
+  <button class="tab add" id="tabAdd" type="button"><span class="plus"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></span>추가</button>
+  <button class="tab" id="tabList" type="button">
+    <svg viewBox="0 0 24 24"><path d="M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01"/></svg>목록</button>
+</div></nav>
+
+<script>
+const $=id=>document.getElementById(id);
+const ACID=[['매우 낮음','쌉쌀하고 묵직한 맛'],['낮음','고소하고 부드러운 맛'],['중간','균형 잡힌 산미'],['높음','과일처럼 상큼한 산미'],['매우 높음','레몬처럼 날카로운 산미']];
+const won=n=>(Number(n)||0).toLocaleString('ko-KR')+'원';
+function today(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
+function norm(p){
+  p.kind=p.kind||'cafe'; p.with=p.with||''; p.memo=p.memo||''; p.photos=p.photos||[];
+  p.coffee=Object.assign({rating:0,acidity:3,menu:'',note:'',price:''},p.coffee);
+  p.bake=Object.assign({rating:0,menu:'',note:'',price:''},p.bake);
+  return p;
+}
+function newPlace(lat,lng){return norm({id:'p'+Date.now(),name:'',lat,lng,date:today()})}
+
+/* 저장소: 사진이 많아도 되도록 IndexedDB 사용 */
+const idb={
+  open(){return new Promise((ok,no)=>{const r=indexedDB.open('cafe-diary',1);
+    r.onupgradeneeded=()=>r.result.createObjectStore('kv');r.onsuccess=()=>ok(r.result);r.onerror=()=>no(r.error)})},
+  async get(k){const d=await this.open();return new Promise((ok,no)=>{const q=d.transaction('kv').objectStore('kv').get(k);q.onsuccess=()=>ok(q.result);q.onerror=()=>no(q.error)})},
+  async set(k,v){const d=await this.open();return new Promise((ok,no)=>{const t=d.transaction('kv','readwrite');t.objectStore('kv').put(v,k);t.oncomplete=()=>ok();t.onerror=()=>no(t.error)})}
+};
+let db={places:[]}, cur=null, saveTimer;
+async function save(){
+  try{await idb.set('db',db);$('saved').textContent='저장됨 '+new Date().toLocaleTimeString('ko-KR')}
+  catch(e){$('saved').textContent='저장하지 못했어요. 브라우저 저장 공간을 확인해 주세요.'}
+}
+function queueSave(){clearTimeout(saveTimer);saveTimer=setTimeout(save,300)}
+
+/* 지도 */
+const map=L.map('map',{zoomControl:false}).setView([37.2703,127.1500],16);
+L.control.zoom({position:'topright'}).addTo(map);
+/* 깔끔한 벡터 지도(OpenFreeMap). 불러오지 못하면 기본 OpenStreetMap 사용 */
+try{
+  L.maplibreGL({style:'https://tiles.openfreemap.org/styles/liberty',
+    attribution:'&copy; OpenFreeMap &copy; OpenMapTiles &copy; OpenStreetMap'}).addTo(map);
+}catch(e){
+  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'&copy; OpenStreetMap'}).addTo(map);
+}
+const markers={};
+function pinIcon(kind){return L.divIcon({className:'',html:'<div class="pin"><span>'+(kind==='bakery'?'🥐':'☕')+'</span></div>',iconSize:[34,34],iconAnchor:[17,34]})}
+function drawMarkers(){
+  Object.values(markers).forEach(m=>m.remove());
+  for(const k in markers)delete markers[k];
+  db.places.forEach(p=>{
+    const m=L.marker([p.lat,p.lng],{icon:pinIcon(p.kind)}).addTo(map);
+    m.bindTooltip(p.name||'이름 없는 곳',{direction:'top',offset:[0,-34]});
+    m.on('click',()=>openEdit(p.id));
+    markers[p.id]=m;
+  });
+}
+
+/* 화면 전환 */
+let mode=null; // {type:'add'} | {type:'move', place}
+function setTab(t){
+  ['Map','List'].forEach(n=>$('tab'+n).classList.toggle('on',t===n.toLowerCase()));
+  $('listScreen').hidden=t!=='list';
+  if(t==='list')drawList();
+}
+$('tabMap').onclick=()=>{cancelMode();setTab('map')};
+$('tabList').onclick=()=>{cancelMode();setTab('list')};
+$('tabAdd').onclick=()=>{setTab('map');startMode({type:'add'},'지도에서 방문한 곳을 눌러 주세요')};
+function startMode(m,text){mode=m;$('bannerText').textContent=text;$('banner').hidden=false;map.getContainer().style.cursor='crosshair'}
+function cancelMode(){mode=null;$('banner').hidden=true;map.getContainer().style.cursor=''}
+$('bannerCancel').onclick=()=>{const m=mode;cancelMode();if(m&&m.type==='move')openEdit(m.place.id)};
+map.on('click',e=>{
+  if(!mode)return;
+  const m=mode;cancelMode();
+  if(m.type==='add'){const p=newPlace(e.latlng.lat,e.latlng.lng);db.places.push(p);save();drawMarkers();openEdit(p.id,true)}
+  else{m.place.lat=e.latlng.lat;m.place.lng=e.latlng.lng;save();drawMarkers();openEdit(m.place.id)}
+});
+
+/* 목록 */
+function avg(p){const r=[p.coffee.rating,p.bake.rating].filter(Boolean);return r.length?r.reduce((a,b)=>a+b)/r.length:0}
+function total(p){return (+p.coffee.price||0)+(+p.bake.price||0)}
+function drawList(){
+  const box=$('listBody');
+  const ps=[...db.places].sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+  const sum=ps.reduce((s,p)=>s+total(p),0);
+  box.innerHTML='<div class="stat"><div><b>'+ps.length+'곳</b>방문</div><div><b>'+won(sum)+'</b>총 지출</div></div>';
+  if(!ps.length){box.innerHTML+='<div class="empty">아직 기록이 없어요.<br>아래 + 버튼으로 첫 가게를 추가해 보세요.</div>';return}
+  ps.forEach(p=>{
+    const b=document.createElement('button');b.type='button';b.className='card';
+    const a=avg(p);
+    b.innerHTML='<div class="th"></div><div class="tx"><div class="nm"></div><div class="mt"></div><div class="st"></div></div>';
+    const th=b.querySelector('.th');
+    if(p.photos[0]){const i=new Image();i.alt='';i.src=p.photos[0];th.appendChild(i)}else th.textContent=p.kind==='bakery'?'🥐':'☕';
+    b.querySelector('.nm').textContent=p.name||'이름 없는 곳';
+    b.querySelector('.mt').textContent=[p.date,p.with,total(p)?won(total(p)):''].filter(Boolean).join(' · ');
+    b.querySelector('.st').textContent=a?'★'.repeat(Math.round(a))+' '+a.toFixed(1):'';
+    b.onclick=()=>openEdit(p.id);
+    box.appendChild(b);
+  });
+}
+
+/* 기록 화면 */
+function stars(el,get,set,scoreEl){
+  el.innerHTML='';
+  for(let i=1;i<=5;i++){
+    const b=document.createElement('button');b.type='button';b.textContent='★';b.setAttribute('aria-label',i+'점');
+    b.onclick=()=>{set(get()===i?0:i);draw();queueSave()};el.appendChild(b);
+  }
+  function draw(){[...el.children].forEach((b,i)=>b.classList.toggle('on',i<get()));scoreEl.textContent=get()?get()+' / 5':'평가 전'}
+  draw();
+}
+function shrink(file){return new Promise(res=>{const r=new FileReader();r.onload=()=>{const im=new Image();im.onload=()=>{
+  const m=1000,s=Math.min(1,m/Math.max(im.width,im.height));const c=document.createElement('canvas');
+  c.width=im.width*s;c.height=im.height*s;c.getContext('2d').drawImage(im,0,0,c.width,c.height);res(c.toDataURL('image/jpeg',.78))};im.src=r.result};r.readAsDataURL(file)})}
+function drawPhotos(){
+  const box=$('photos');box.innerHTML='';
+  cur.photos.forEach((src,i)=>{
+    const d=document.createElement('div');d.className='ph';
+    d.innerHTML='<img alt="방문 사진 '+(i+1)+'"><button type="button" aria-label="사진 삭제">×</button>';
+    d.querySelector('img').src=src;
+    d.querySelector('button').onclick=()=>{cur.photos.splice(i,1);drawPhotos();save()};
+    box.appendChild(d);
+  });
+  const a=document.createElement('div');a.className='add';a.tabIndex=0;a.textContent='+ 사진 추가';
+  a.onclick=()=>$('file').click();
+  a.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();$('file').click()}};
+  box.appendChild(a);
+}
+$('file').onchange=async e=>{for(const f of e.target.files)cur.photos.push(await shrink(f));e.target.value='';drawPhotos();save()};
+function drawAcid(){const v=cur.coffee.acidity;$('acidity').value=v;$('acidNow').innerHTML='<b>'+ACID[v-1][0]+'</b> · '+ACID[v-1][1]}
+$('acidity').oninput=e=>{cur.coffee.acidity=+e.target.value;drawAcid();queueSave()};
+function drawTotal(){$('totalPrice').textContent=won(total(cur))}
+function drawKind(){document.querySelectorAll('#kindSeg button').forEach(b=>b.classList.toggle('on',b.dataset.k===cur.kind))}
+document.querySelectorAll('#kindSeg button').forEach(b=>b.onclick=()=>{cur.kind=b.dataset.k;drawKind();drawMarkers();queueSave()});
+
+const fields=[
+  ['name',p=>p.name,(p,v)=>p.name=v],['date',p=>p.date,(p,v)=>p.date=v],['withWho',p=>p.with,(p,v)=>p.with=v],
+  ['coffeeMenu',p=>p.coffee.menu,(p,v)=>p.coffee.menu=v],['coffeeNote',p=>p.coffee.note,(p,v)=>p.coffee.note=v],
+  ['coffeePrice',p=>p.coffee.price,(p,v)=>p.coffee.price=v],
+  ['bakeMenu',p=>p.bake.menu,(p,v)=>p.bake.menu=v],['bakeNote',p=>p.bake.note,(p,v)=>p.bake.note=v],
+  ['bakePrice',p=>p.bake.price,(p,v)=>p.bake.price=v],['memo',p=>p.memo,(p,v)=>p.memo=v]
+];
+fields.forEach(([id,get,set])=>{$(id).oninput=()=>{
+  set(cur,$(id).value);queueSave();
+  if(id==='name'){$('pname').textContent=cur.name||'새 기록';markers[cur.id]&&markers[cur.id].setTooltipContent(cur.name||'이름 없는 곳')}
+  if(id.endsWith('Price'))drawTotal();
+}});
+
+let delArmed=false,delTimer;
+function openEdit(id,isNew){
+  cur=db.places.find(p=>p.id===id);if(!cur)return;
+  cancelMode();
+  fields.forEach(([fid,get])=>$(fid).value=get(cur)??'');
+  $('pname').textContent=cur.name||'새 기록';
+  $('withList').innerHTML=[...new Set(db.places.map(p=>p.with).filter(Boolean))].map(v=>'<option value="'+v.replace(/"/g,'&quot;')+'">').join('');
+  stars($('coffeeStars'),()=>cur.coffee.rating,v=>cur.coffee.rating=v,$('coffeeScore'));
+  stars($('bakeStars'),()=>cur.bake.rating,v=>cur.bake.rating=v,$('bakeScore'));
+  drawKind();drawPhotos();drawAcid();drawTotal();
+  $('saved').textContent='';$('editBody').scrollTop=0;
+  delArmed=false;$('delBtn').textContent='삭제';
+  $('editScreen').hidden=false;
+  if(isNew)setTimeout(()=>$('name').focus(),50);
+}
+function closeEdit(){
+  clearTimeout(saveTimer);save();
+  $('editScreen').hidden=true;
+  drawMarkers();
+  if(!$('listScreen').hidden)drawList();
+  if(cur&&cur.lat)map.panTo([cur.lat,cur.lng]);
+}
+$('backBtn').onclick=closeEdit;
+$('delBtn').onclick=()=>{
+  if(!delArmed){delArmed=true;$('delBtn').textContent='정말 삭제';clearTimeout(delTimer);delTimer=setTimeout(()=>{delArmed=false;$('delBtn').textContent='삭제'},3000);return}
+  db.places=db.places.filter(p=>p!==cur);cur=null;save();$('editScreen').hidden=true;drawMarkers();
+  if(!$('listScreen').hidden)drawList();
+};
+$('moveBtn').onclick=()=>{const p=cur;clearTimeout(saveTimer);save();$('editScreen').hidden=true;$('listScreen').hidden=true;
+  $('tabMap').classList.add('on');$('tabList').classList.remove('on');
+  map.panTo([p.lat,p.lng]);startMode({type:'move',place:p},'새 위치를 지도에서 눌러 주세요')};
+
+/* 시작 */
+(async function(){
+  let d; try{d=await idb.get('db')}catch(e){}
+  if(!d){ // 이전 버전에서 입력한 내용이 있으면 가져옴
+    try{const old=JSON.parse(localStorage.getItem('cafe-map-v1'));if(old&&old.places)d=old}catch(e){}
+  }
+  if(!d||!d.places||!d.places.length)d={places:[norm({id:'clover',name:'클로버',lat:37.2703,lng:127.1500,date:today()})]};
+  d.places.forEach(norm);db=d;
+  drawMarkers();
+  if(db.places[0])map.setView([db.places[0].lat,db.places[0].lng],16);
+})();
+if('serviceWorker' in navigator&&location.protocol.startsWith('http'))navigator.serviceWorker.register('sw.js').catch(()=>{});
+</script>
+</body>
+</html>
