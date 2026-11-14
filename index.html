@@ -6,12 +6,12 @@
 <meta name="theme-color" content="#b8553a">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="맛집일기">
+<meta name="apple-mobile-web-app-title" content="우리가족기록♡">
 <link rel="manifest" href="manifest.json">
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-192.png">
-<title>맛집 지도 일기</title>
-<script src="config.js?v=7"></script>
+<title>우리가족기록♡</title>
+<script src="config.js?v=9"></script>
 <script src="https://unpkg.com/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -124,8 +124,8 @@ body.trip .ibtn{color:var(--trip)}
 .login .btn{padding:11px 14px;font-size:16px}
 
 /* 목록 */
-.stat{display:flex;gap:16px;margin-bottom:14px;color:var(--muted);font-size:13px}
-.stat b{color:var(--fg);font-size:18px;font-variant-numeric:tabular-nums;display:block}
+.stat{display:flex;flex-wrap:wrap;gap:8px 20px;margin-bottom:14px;color:var(--muted);font-size:13px}
+.stat b{color:var(--fg);font-size:17px;font-variant-numeric:tabular-nums;display:block;white-space:nowrap}
 .card{display:flex;gap:12px;width:100%;text-align:left;background:var(--bg);border:1px solid var(--line);border-radius:12px;
   padding:10px;margin-bottom:10px;cursor:pointer}
 .card .th{width:64px;height:64px;border-radius:8px;flex:none;background:var(--accent-soft);display:grid;place-items:center;font-size:26px;overflow:hidden}
@@ -144,7 +144,7 @@ body.trip .tag{background:color-mix(in srgb,var(--trip) 18%,var(--bg));color:var
 
 /* 폼 */
 label.lbl{display:block;font-size:12px;color:var(--muted);letter-spacing:.04em;margin:0 0 4px}
-input[type=text],input[type=email],input[type=password],input[type=date],input[type=time],input[type=number],textarea{
+input[type=text],input[type=search],input[type=email],input[type=password],input[type=date],input[type=time],input[type=number],textarea{
   width:100%;font:inherit;font-size:16px;color:var(--fg);background:var(--bg);border:1px solid var(--line);
   border-radius:8px;padding:9px 10px}
 textarea{resize:vertical;min-height:64px}
@@ -211,6 +211,81 @@ body.trip .results .manual{color:var(--trip)}
   background:var(--panel);color:var(--fg);font-size:12px;padding:2px 8px;border-radius:999px;border:1px solid var(--line);
   box-shadow:0 1px 4px rgba(0,0,0,.25)}
 .kpin .plabel:empty{display:none}
+
+/* 홈: 설정 버튼, 기념일(D+) */
+.home .btns{display:flex;gap:8px;flex:none}
+.dd{margin-top:8px;border:0;border-radius:999px;padding:4px 12px;font:inherit;font-size:12px;cursor:pointer;color:#fff;background:rgba(0,0,0,.32);
+  backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);display:inline-flex;gap:6px;align-items:baseline;transition:opacity .25s}
+.dd[hidden]{display:none}
+.dd.fade{opacity:0}
+.dd b{font-variant-numeric:tabular-nums}
+.home.light .dd{background:rgba(255,255,255,.55);color:#3b2a20}
+@media (prefers-reduced-motion:reduce){.dd{transition:none}}
+.screen.over{z-index:850}
+
+/* 설정 · 기념일 */
+.setrow{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:14px 0;border-bottom:1px solid var(--line)}
+.setrow .sl{min-width:0}
+.setrow .sl b{display:block}
+.setrow .sl span{font-size:13px;color:var(--muted)}
+.setgrp{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+.setrow .btn[hidden]{display:none}
+.arow{display:flex;align-items:center;gap:10px;padding:12px 0;border-bottom:1px solid var(--line)}
+.arow .an{min-width:0;flex:1}
+.arow .an b{display:block}
+.arow .an span{font-size:12px;color:var(--muted)}
+.arow .dv{font-weight:700;font-variant-numeric:tabular-nums;color:var(--accent)}
+.addann{display:grid;gap:10px;margin-top:18px}
+.addann select{width:100%;font:inherit;font-size:16px;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:9px 10px}
+.gridbox{display:grid;gap:12px;margin-bottom:12px}
+.gridbox[hidden]{display:none}
+select#sMode{width:100%;font:inherit;font-size:16px;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:9px 10px}
+
+/* 잠금 */
+.lock{z-index:1000;background:var(--bg);align-items:center}
+.lock[hidden]{display:none}
+.lock .box{width:min(320px,86vw);text-align:center}
+.lock h1{margin:0 0 6px;font-size:20px}
+.lock .dots{display:flex;gap:14px;justify-content:center;margin:18px 0 8px}
+.lock .dots i{width:14px;height:14px;border-radius:50%;border:2px solid var(--muted)}
+.lock .dots i.on{background:var(--accent);border-color:var(--accent)}
+.lock .dots.shake{animation:shake .35s}
+@keyframes shake{20%,60%{transform:translateX(-8px)}40%,80%{transform:translateX(8px)}}
+.lock .lerr{min-height:22px;color:#c0392b;font-size:14px}
+.lock .keys{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:14px auto 10px;max-width:260px}
+.lock .keys button{height:62px;border-radius:50%;border:1px solid var(--line);background:var(--panel);font-size:24px;cursor:pointer;color:var(--fg)}
+.lock .keys button:active{background:var(--accent-soft)}
+.lock .keys .sp{visibility:hidden}
+.lock .links{display:grid;gap:6px}
+.lock .links button{border:0;background:none;color:var(--muted);font-size:14px;cursor:pointer;text-decoration:underline;padding:6px}
+.lock .links button[hidden]{display:none}
+@media (prefers-reduced-motion:reduce){.lock .dots.shake{animation:none}}
+
+/* 검색·필터 */
+.filters{flex:none;padding:10px max(16px,env(safe-area-inset-right,0px)) 8px max(16px,env(safe-area-inset-left,0px));border-bottom:1px solid var(--line);display:grid;gap:8px}
+.filters[hidden]{display:none}
+.filters input{border-radius:999px;padding:8px 14px;font-size:15px}
+.frow{display:flex;gap:6px;align-items:center}
+.chips{display:flex;gap:6px;overflow-x:auto;flex:1;min-width:0;padding-bottom:2px;scrollbar-width:none}
+.chips::-webkit-scrollbar{display:none}
+.chip,.chipbtn{flex:none;border:1px solid var(--line);background:var(--bg);border-radius:999px;padding:4px 12px;font-size:13px;cursor:pointer;white-space:nowrap;color:var(--fg)}
+.chip.on{background:var(--accent);border-color:var(--accent);color:#fff}
+body.trip .chip.on{background:var(--trip);border-color:var(--trip)}
+.chipbtn{color:var(--muted)}
+.chipbtn[hidden]{display:none}
+
+/* 예산 */
+.budget{margin:6px 0 12px}
+.budget .bt{display:flex;justify-content:space-between;font-size:13px;color:var(--muted)}
+.budget .bt b.ok{color:var(--trip)}
+.budget .bt b.over{color:#c0392b}
+.bbar{height:8px;border-radius:999px;background:var(--line);overflow:hidden;margin-top:6px}
+.bbar i{display:block;height:100%;background:var(--trip);border-radius:999px}
+.bbar i.over{background:#c0392b}
+.viewer{z-index:1100;background:rgba(0,0,0,.93);align-items:center;cursor:zoom-out}
+.viewer img{max-width:100%;max-height:100%;object-fit:contain}
+.viewer .vclose{position:absolute;top:calc(12px + env(safe-area-inset-top,0px));right:max(14px,env(safe-area-inset-right,0px));border:0;border-radius:999px;background:rgba(255,255,255,.2);color:#fff;padding:6px 14px;cursor:pointer}
+.ph img{cursor:zoom-in}
 </style>
 </head>
 <body>
@@ -230,6 +305,10 @@ body.trip .results .manual{color:var(--trip)}
       <button class="ibtn" id="listBack" type="button" hidden>← 여행 목록</button>
       <h1 id="listTitle"></h1>
       <button class="ibtn" id="listAct" type="button" hidden></button>
+    </div>
+    <div class="filters" id="filters" hidden>
+      <input type="search" id="fq" placeholder="검색" autocomplete="off" aria-label="목록 검색">
+      <div class="frow"><div class="chips" id="fchips"></div><button class="chipbtn" id="fsort" type="button" hidden></button></div>
     </div>
     <div class="scroll" id="listBody"></div>
   </div>
@@ -315,6 +394,8 @@ body.trip .results .manual{color:var(--trip)}
         <input type="text" id="tWith" list="tWithList" placeholder="예: 가족, 친구들">
         <datalist id="tWithList"></datalist>
       </div>
+      <div style="margin-bottom:12px"><label class="lbl" for="tBudget">예산 (선택)</label>
+        <div class="price"><input type="number" id="tBudget" inputmode="numeric" min="0" step="10000" placeholder="비워 두면 사용 안 함"><span>원</span></div></div>
       <div><label class="lbl" for="tNote">여행 메모</label><textarea id="tNote" placeholder="준비물, 총평 등"></textarea></div>
       <div class="saved" style="margin-top:12px"></div>
     </div>
@@ -331,7 +412,14 @@ body.trip .results .manual{color:var(--trip)}
     </div>
     <div class="scroll">
       <div class="seg" id="sKindSeg" style="margin-bottom:12px"></div>
-      <div style="margin-bottom:12px"><label class="lbl" for="sName">장소 이름</label><input type="text" id="sName"></div>
+      <div style="margin-bottom:12px"><label class="lbl" for="sName" id="sNameLbl">장소 이름</label><input type="text" id="sName"></div>
+      <div class="gridbox" id="sMoveBox" hidden>
+        <div><label class="lbl" for="sMode">교통수단</label><select id="sMode"></select></div>
+        <div class="row">
+          <div><label class="lbl" for="sFrom">출발지</label><input type="text" id="sFrom" placeholder="예: 집, 김포공항"></div>
+          <div><label class="lbl" for="sTo">도착지</label><input type="text" id="sTo" placeholder="예: 제주공항"></div>
+        </div>
+      </div>
       <div class="row" style="margin-bottom:16px">
         <div><label class="lbl" for="sDate">날짜</label><input type="date" id="sDate"></div>
         <div><label class="lbl" for="sTime">시간</label><input type="time" id="sTime"></div>
@@ -348,7 +436,7 @@ body.trip .results .manual{color:var(--trip)}
         <div><label class="lbl" for="sCost">쓴 금액 <span id="sCostHint"></span></label>
           <div class="price"><input type="number" id="sCost" inputmode="numeric" min="0" step="100" placeholder="0"><span>원</span></div></div>
         <div><label class="lbl" for="sNote">메모</label><textarea id="sNote" placeholder="뭘 했는지, 좋았던 점, 다음에 가면 할 것"></textarea></div>
-        <div><button class="btn" id="sMove" type="button">핀 위치 옮기기</button></div>
+        <div id="sPinBox"><button class="btn" id="sMove" type="button">핀 위치 옮기기</button></div>
         <div class="saved"></div>
       </section>
     </div>
@@ -362,9 +450,14 @@ body.trip .results .manual{color:var(--trip)}
   <input type="file" id="homeFile" accept="image/*" hidden>
   <div class="inner">
     <div class="top">
-      <div><h1>우리가족기록♡</h1><div class="date" id="homeDate"></div><div class="date" id="syncState"></div><div class="date" id="appVer" style="opacity:.6;font-size:11px"></div><button class="outlink" id="logoutBtn" type="button" hidden>로그아웃</button></div>
-      <button class="cam" id="homeCam" type="button" aria-label="배경 사진 바꾸기">
-        <svg viewBox="0 0 24 24"><path d="M4 8h3l2-2h6l2 2h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg></button>
+      <div><h1>우리가족기록♡</h1><div class="date" id="homeDate"></div>
+        <button class="dd" id="ddPill" type="button" hidden aria-label="기념일 보기"><span id="ddName"></span><b id="ddVal"></b></button></div>
+      <div class="btns">
+        <button class="cam" id="homeSet" type="button" aria-label="설정">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button>
+        <button class="cam" id="homeCam" type="button" aria-label="배경 사진 바꾸기">
+          <svg viewBox="0 0 24 24"><path d="M4 8h3l2-2h6l2 2h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg></button>
+      </div>
     </div>
     <div class="menu">
       <button class="mbtn" id="goCafe" type="button">
@@ -376,6 +469,72 @@ body.trip .results .manual{color:var(--trip)}
     </div>
   </div>
 </div>
+
+<!-- 설정 -->
+<div class="screen editor over" id="setScreen" hidden>
+  <div class="page">
+    <div class="bar"><button class="ibtn" id="setBack" type="button">← 닫기</button><h1>설정</h1></div>
+    <div class="scroll">
+      <div class="setrow">
+        <div class="sl"><b>앱 잠금 (비밀번호)</b><span id="setPinState"></span></div>
+        <div class="setgrp">
+          <button class="btn on" id="setPinOn" type="button">켜기</button>
+          <button class="btn" id="setPinChange" type="button" hidden>변경</button>
+          <button class="btn" id="setPinOff" type="button" hidden>끄기</button>
+        </div>
+      </div>
+      <div class="setrow">
+        <div class="sl"><b>기념일 관리</b><span>홈 화면에 D+ 로 보여요</span></div>
+        <div class="setgrp"><button class="btn" id="setAnn" type="button">열기</button></div>
+      </div>
+      <div class="setrow">
+        <div class="sl"><b>가족 공유</b><span id="syncState"></span></div>
+        <div class="setgrp"><button class="btn" id="logoutBtn" type="button" hidden>로그아웃</button></div>
+      </div>
+      <div class="setrow">
+        <div class="sl"><b>사진 보관</b><span id="setPhotoState"></span></div>
+      </div>
+      <div class="setrow" style="border-bottom:0"><div class="sl"><b>우리가족기록♡</b><span id="appVer"></span></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- 기념일 -->
+<div class="screen editor over" id="annScreen" hidden>
+  <div class="page">
+    <div class="bar"><button class="ibtn" id="annBack" type="button">← 닫기</button><h1>기념일</h1></div>
+    <div class="scroll">
+      <div id="annList"></div>
+      <div class="addann">
+        <label class="lbl" for="annName">새 기념일 추가</label>
+        <input type="text" id="annName" placeholder="이름 (예: 첫 만남)">
+        <input type="date" id="annDate" aria-label="날짜">
+        <select id="annType" aria-label="종류"><option value="anniv">기념일</option><option value="birth">생일</option></select>
+        <div class="err" id="annErr" style="color:#c0392b;font-size:14px"></div>
+        <button class="btn on" id="annAdd" type="button">추가</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 앱 잠금 -->
+<div class="screen lock" id="lockScreen" hidden>
+  <div class="box">
+    <h1 id="lockTitle"></h1>
+    <div class="dots" id="lockDots"><i></i><i></i><i></i><i></i></div>
+    <div class="lerr" id="lockErr" role="alert"></div>
+    <div class="keys" id="lockKeys">
+      <button type="button" data-k="1">1</button><button type="button" data-k="2">2</button><button type="button" data-k="3">3</button>
+      <button type="button" data-k="4">4</button><button type="button" data-k="5">5</button><button type="button" data-k="6">6</button>
+      <button type="button" data-k="7">7</button><button type="button" data-k="8">8</button><button type="button" data-k="9">9</button>
+      <button type="button" class="sp" tabindex="-1" aria-hidden="true"></button><button type="button" data-k="0">0</button><button type="button" data-k="del" aria-label="지우기">⌫</button>
+    </div>
+    <div class="links"><button id="lockCancel" type="button" hidden>취소</button><button id="lockForgot" type="button" hidden>번호를 잊었어요</button></div>
+  </div>
+</div>
+
+<!-- 사진 크게 보기 -->
+<div class="screen viewer" id="viewScreen" hidden><img id="viewImg" alt="사진 크게 보기"><button class="vclose" type="button" aria-label="닫기">닫기</button></div>
 
 <!-- 로그인 -->
 <div class="screen login" id="loginScreen" hidden>
@@ -402,10 +561,11 @@ body.trip .results .manual{color:var(--trip)}
 </div></nav>
 
 <script>
-const APP_VER='7';
+const APP_VER='9';
 const $=id=>document.getElementById(id);
 const ACID=[['매우 낮음','쌉쌀하고 묵직한 맛'],['낮음','고소하고 부드러운 맛'],['중간','균형 잡힌 산미'],['높음','과일처럼 상큼한 산미'],['매우 높음','레몬처럼 날카로운 산미']];
-const KIND={spot:{label:'명소',icon:'📍'},food:{label:'식당',icon:'🍽️'},cafe:{label:'카페',icon:'☕'},bakery:{label:'빵집',icon:'🥐'},lodging:{label:'숙소',icon:'🛏️'}};
+const KIND={spot:{label:'명소',icon:'📍'},food:{label:'식당',icon:'🍽️'},cafe:{label:'카페',icon:'☕'},bakery:{label:'빵집',icon:'🥐'},lodging:{label:'숙소',icon:'🛏️'},move:{label:'교통',icon:'🚗'}};
+const MODES=[['car','자동차','🚗'],['train','기차','🚆'],['bus','버스','🚌'],['plane','비행기','✈️'],['ship','배','🚢'],['subway','지하철','🚇'],['taxi','택시','🚕'],['walk','도보','🚶'],['etc','기타','➡️']];
 const won=n=>(Number(n)||0).toLocaleString('ko-KR')+'원';
 function today(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
 const DOW=['일','월','화','수','목','금','토'];
@@ -420,10 +580,10 @@ function norm(p){
   return p;
 }
 function normStop(s){
-  return Object.assign({id:'s'+Date.now(),kind:'spot',name:'',lat:0,lng:0,date:'',time:'',rating:0,cost:'',nights:'',note:'',photos:[]},s);
+  return Object.assign({id:'s'+Date.now(),kind:'spot',name:'',lat:0,lng:0,date:'',time:'',rating:0,cost:'',nights:'',note:'',photos:[],mode:'',from:'',to:''},s);
 }
 function normTrip(t){
-  t=Object.assign({id:'t'+Date.now(),title:'',start:'',end:'',with:'',note:'',stops:[]},t);
+  t=Object.assign({id:'t'+Date.now(),title:'',start:'',end:'',with:'',note:'',budget:'',stops:[]},t);
   t.stops=t.stops.map(normStop);return t;
 }
 function newPlace(lat,lng){return norm({id:'p'+Date.now(),name:'',lat,lng,date:today()})}
@@ -433,8 +593,10 @@ const idb={
   open(){return new Promise((ok,no)=>{const r=indexedDB.open('cafe-diary',1);
     r.onupgradeneeded=()=>r.result.createObjectStore('kv');r.onsuccess=()=>ok(r.result);r.onerror=()=>no(r.error)})},
   async get(k){const d=await this.open();return new Promise((ok,no)=>{const q=d.transaction('kv').objectStore('kv').get(k);q.onsuccess=()=>ok(q.result);q.onerror=()=>no(q.error)})},
-  async set(k,v){const d=await this.open();return new Promise((ok,no)=>{const t=d.transaction('kv','readwrite');t.objectStore('kv').put(v,k);t.oncomplete=()=>ok();t.onerror=()=>no(t.error)})}
+  async set(k,v){const d=await this.open();return new Promise((ok,no)=>{const t=d.transaction('kv','readwrite');t.objectStore('kv').put(v,k);t.oncomplete=()=>ok();t.onerror=()=>no(t.error)})},
+  async del(k){const d=await this.open();return new Promise((ok,no)=>{const t=d.transaction('kv','readwrite');t.objectStore('kv').delete(k);t.oncomplete=()=>ok();t.onerror=()=>no(t.error)})}
 };
+let authDone;const authReady=new Promise(r=>authDone=r);
 let db={places:[],trips:[],home:{photo:''}}, cur=null, curTrip=null, curStop=null, activeTrip=null, section=null, saveTimer;
 function setSaved(t){document.querySelectorAll('.saved').forEach(e=>e.textContent=t)}
 async function save(){
@@ -597,12 +759,12 @@ function showPhoto(){
       hs.classList.toggle('light',(0.299*r+0.587*g+0.114*b)>150);
     }catch(e){hs.style.background='';hs.classList.remove('light')}
   };
-  img.src=db.home.photo;
+  photoURL(db.home.photo,false).then(u=>{if(u)img.src=u});
 }
 function drawHome(){
   const d=new Date();
   $('homeDate').textContent=d.getFullYear()+'년 '+(d.getMonth()+1)+'월 '+d.getDate()+'일 '+DOW[d.getDay()]+'요일';
-  $('appVer').textContent='앱 버전 '+APP_VER;
+  drawPill();
   const cafeSum=db.places.reduce((s,p)=>s+total(p),0);
   $('homeCafeSub').textContent=db.places.length?db.places.length+'곳 방문 · '+won(cafeSum):'아직 기록이 없어요';
   const stops=db.trips.reduce((s,t)=>s+t.stops.length,0);
@@ -611,7 +773,7 @@ function drawHome(){
 }
 function showHome(){
   cancelMode();section=null;activeTrip=null;
-  ['listScreen','editScreen','tripScreen','stopScreen'].forEach(i=>$(i).hidden=true);
+  ['listScreen','editScreen','tripScreen','stopScreen','setScreen','annScreen'].forEach(i=>$(i).hidden=true);
   document.body.classList.remove('trip');
   drawHome();$('homeScreen').hidden=false;
 }
@@ -631,7 +793,7 @@ $('homeCam').onclick=()=>$('homeFile').click();
 $('homeEmptyBtn').onclick=()=>$('homeFile').click();
 $('homeFile').onchange=async e=>{
   const f=e.target.files[0];if(!f)return;
-  db.home.photo=await shrink(f,1600,.82);e.target.value='';showPhoto();save();
+  const old=db.home.photo;db.home.photo=await addPhotoFile(f,{max:1600,q:.82,noThumb:true});e.target.value='';showPhoto();save();if(old)dropPhotos([old]);
 };
 
 /* 화면 전환 */
@@ -722,20 +884,43 @@ function card(thumb,name,meta,stars,onclick){
   const b=document.createElement('button');b.type='button';b.className='card';
   b.innerHTML='<div class="th"></div><div class="tx"><div class="nm"></div><div class="mt"></div><div class="st"></div></div>';
   const th=b.querySelector('.th');
-  if(thumb&&thumb.startsWith('data:')){const i=new Image();i.alt='';i.src=thumb;th.appendChild(i)}else th.textContent=thumb||'';
+  if(thumb&&(thumb.startsWith('data:')||thumb.startsWith('sb:'))){const i=new Image();i.alt='';th.appendChild(i);setImg(i,thumb,true)}else th.textContent=thumb||'';
   if(name&&name.tag){const s=document.createElement('span');s.className='tag';s.textContent=name.tag;b.querySelector('.nm').appendChild(s);b.querySelector('.nm').appendChild(document.createTextNode(name.text))}
   else b.querySelector('.nm').textContent=name;
   b.querySelector('.mt').textContent=meta;b.querySelector('.st').textContent=stars||'';
   b.onclick=onclick;return b;
 }
+/* 검색·필터 막대: 목록 위에 붙어 있고, 화면 종류(ctx)가 바뀌면 초기화됩니다 */
+let F={ctx:'',q:'',chip:'all',sort:0};
+function setupFilters(ctx,chips,sorts,ph){
+  if(F.ctx!==ctx){F={ctx,q:'',chip:'all',sort:0};$('fq').value=''}
+  $('filters').hidden=false;$('fq').placeholder=ph;
+  const box=$('fchips');box.innerHTML='';
+  chips.forEach(([k,label])=>{
+    const b=document.createElement('button');b.type='button';b.className='chip'+(F.chip===k?' on':'');b.textContent=label;
+    b.onclick=()=>{F.chip=k;drawList()};box.appendChild(b);
+  });
+  const sb2=$('fsort');sb2.hidden=!sorts;
+  if(sorts){sb2.textContent=sorts[F.sort%sorts.length][1];sb2.onclick=()=>{F.sort=(F.sort+1)%sorts.length;drawList()}}
+}
+$('fq').oninput=()=>{F.q=$('fq').value;drawList()};
+const hit=(q,...fs)=>{q=(q||'').trim().toLowerCase();return !q||fs.some(f=>String(f||'').toLowerCase().includes(q))};
+const filtering=()=>!!(F.q.trim()||F.chip!=='all');
+
 function drawList(){
   if(section==='trip')return activeTrip?drawTripDetail():drawTripList();
   setBar('내가 간 곳');
+  setupFilters('cafe',[['all','전체'],['cafe','카페'],['bakery','빵집'],['star','★4 이상']],
+    [['recent','최근순'],['star','별점순'],['spend','지출순']],'가게, 메뉴, 같이 간 사람 검색');
   const box=$('listBody');
-  const ps=[...db.places].sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+  let ps=db.places.filter(p=>
+    (F.chip==='all'||(F.chip==='star'?avg(p)>=4:p.kind===F.chip))&&
+    hit(F.q,p.name,p.with,p.memo,p.date,p.coffee.menu,p.coffee.note,p.bake.menu,p.bake.note));
+  const key=['recent','star','spend'][F.sort%3];
+  ps.sort((a,b)=>key==='star'?avg(b)-avg(a):key==='spend'?total(b)-total(a):(b.date||'').localeCompare(a.date||''));
   const sum=ps.reduce((s,p)=>s+total(p),0);
-  box.innerHTML='<div class="stat"><div><b>'+ps.length+'곳</b>방문</div><div><b>'+won(sum)+'</b>총 지출</div></div>';
-  if(!ps.length){box.innerHTML+='<div class="empty">아직 기록이 없어요.<br>위 검색창이나 + 버튼으로 첫 가게를 추가해 보세요.</div>';return}
+  box.innerHTML='<div class="stat"><div><b>'+ps.length+'곳</b>'+(filtering()?'검색 결과':'방문')+'</div><div><b>'+won(sum)+'</b>총 지출</div></div>';
+  if(!ps.length){box.innerHTML+='<div class="empty">'+(filtering()?'조건에 맞는 기록이 없어요.':'아직 기록이 없어요.<br>위 검색창이나 + 버튼으로 첫 가게를 추가해 보세요.')+'</div>';return}
   ps.forEach(p=>{const a=avg(p);
     box.appendChild(card(p.photos[0]||(p.kind==='bakery'?'🥐':'☕'),p.name||'이름 없는 곳',
       [p.date,p.with,total(p)?won(total(p)):''].filter(Boolean).join(' · '),a?'★'.repeat(Math.round(a))+' '+a.toFixed(1):'',()=>openEdit(p.id)));
@@ -743,45 +928,60 @@ function drawList(){
 }
 function drawTripList(){
   setBar('여행','','+ 새 여행',()=>{const t=normTrip({id:'t'+Date.now(),start:today()});db.trips.push(t);save();openTrip(t.id,true)});
+  const years=[...new Set(db.trips.map(t=>(t.start||'').slice(0,4)).filter(Boolean))].sort().reverse();
+  setupFilters('trips',[['all','전체']].concat(years.map(y=>[y,y+'년'])),[['recent','최근순'],['spend','지출순']],'여행, 장소, 같이 간 사람 검색');
   const box=$('listBody');
-  const ts=[...db.trips].sort((a,b)=>(b.start||'').localeCompare(a.start||''));
+  let ts=db.trips.filter(t=>(F.chip==='all'||(t.start||'').startsWith(F.chip))&&
+    hit(F.q,t.title,t.with,t.note,...t.stops.map(s=>s.name+' '+s.from+' '+s.to)));
+  ts.sort((a,b)=>F.sort%2===1?tripTotal(b)-tripTotal(a):(b.start||'').localeCompare(a.start||''));
   const sum=ts.reduce((s,t)=>s+tripTotal(t),0);
-  box.innerHTML='<div class="stat"><div><b>'+ts.length+'개</b>여행</div><div><b>'+won(sum)+'</b>총 지출</div></div>';
-  if(!ts.length){box.innerHTML+='<div class="empty">아직 여행이 없어요.<br>오른쪽 위의 + 새 여행을 눌러 시작해 보세요.</div>';return}
+  box.innerHTML='<div class="stat"><div><b>'+ts.length+'개</b>'+(filtering()?'검색 결과':'여행')+'</div><div><b>'+won(sum)+'</b>총 지출</div></div>';
+  if(!ts.length){box.innerHTML+='<div class="empty">'+(filtering()?'조건에 맞는 여행이 없어요.':'아직 여행이 없어요.<br>오른쪽 위의 + 새 여행을 눌러 시작해 보세요.')+'</div>';return}
   ts.forEach(t=>{
     const ph=t.stops.flatMap(s=>s.photos)[0];
     const per=t.start?mdw(t.start)+(t.end&&t.end!==t.start?' ~ '+mdw(t.end):''):'';
-    box.appendChild(card(ph||'🧳',t.title||'이름 없는 여행',[per,t.with,'장소 '+t.stops.length+'곳',tripTotal(t)?won(tripTotal(t)):''].filter(Boolean).join(' · '),'',
+    box.appendChild(card(ph||'🧳',t.title||'이름 없는 여행',[per,t.with,'기록 '+t.stops.length+'개',tripTotal(t)?won(tripTotal(t)):''].filter(Boolean).join(' · '),'',
       ()=>{activeTrip=t;drawMarkers();drawList();fitTrip()}));
   });
 }
+function stopName(s){return s.kind==='move'?(s.name||[s.from,s.to].filter(Boolean).join(' → ')||'이동'):(s.name||'이름 없는 곳')}
+function stopTitle(s){return s.kind==='move'?(s.name||[s.from,s.to].filter(Boolean).join(' → ')||'새 교통편'):(s.name||'새 장소')}
 function drawTripDetail(){
   const t=activeTrip;
   setBar(t.title||'이름 없는 여행','← 여행 목록','편집',()=>openTrip(t.id),()=>{activeTrip=null;drawMarkers();drawList()});
+  const kinds=Object.keys(KIND).filter(k=>t.stops.some(s=>s.kind===k));
+  setupFilters('detail:'+t.id,[['all','전체']].concat(kinds.map(k=>[k,KIND[k].label])),null,'이 여행에서 장소, 메모 검색');
   const box=$('listBody');
   const per=t.start?mdw(t.start)+(t.end&&t.end!==t.start?' ~ '+mdw(t.end):''):'날짜 미정';
   const nights=t.start&&t.end?dayDiff(t.start,t.end):0;
-  box.innerHTML='<div class="stat"><div><b>'+esc(per)+'</b>'+(nights>0?nights+'박 '+(nights+1)+'일':'기간')+'</div><div><b>'+t.stops.length+'곳</b>장소</div><div><b>'+won(tripTotal(t))+'</b>총 지출</div></div>'
-    +(t.with?'<div class="hint" style="margin-bottom:10px;color:var(--muted);font-size:13px">같이 간 사람 · '+esc(t.with)+'</div>':'')
-    +'<div class="actions"><button class="btn on" id="tdAdd" type="button">+ 장소 추가</button><button class="btn" id="tdMap" type="button">지도로 보기</button></div>'
-    +'<div class="hint" style="color:var(--muted);font-size:12px">지도 위 검색창으로 찾거나, 지도를 눌러서 추가해요.</div>';
+  const spent=tripTotal(t),bud=+t.budget||0;
+  let h='<div class="stat"><div><b>'+esc(per)+'</b>'+(nights>0?nights+'박 '+(nights+1)+'일':'기간')+'</div><div><b>'+t.stops.length+'개</b>기록</div><div><b>'+won(spent)+'</b>총 지출</div></div>';
+  if(bud>0){
+    const left=bud-spent,pct=Math.min(100,Math.round(spent/bud*100));
+    h+='<div class="budget"><div class="bt"><span>예산 '+won(bud)+'</span><b class="'+(left<0?'over':'ok')+'">'+(left<0?won(-left)+' 초과':won(left)+' 남음')+'</b></div><div class="bbar"><i class="'+(left<0?'over':'')+'" style="width:'+pct+'%"></i></div></div>';
+  }
+  h+=(t.with?'<div class="hint" style="margin-bottom:10px;color:var(--muted);font-size:13px">같이 간 사람 · '+esc(t.with)+'</div>':'')
+    +'<div class="actions"><button class="btn on" id="tdAdd" type="button">+ 장소 추가</button><button class="btn" id="tdMove" type="button">+ 교통편</button><button class="btn" id="tdMap" type="button">지도로 보기</button></div>'
+    +'<div class="hint" style="color:var(--muted);font-size:12px">장소는 지도 위 검색창으로 찾거나 지도를 눌러서 추가해요.</div>';
+  box.innerHTML=h;
   $('tdAdd').onclick=()=>{setTab('map');$('q').focus()};
+  $('tdMove').onclick=()=>addStop({kind:'move',name:''});
   $('tdMap').onclick=()=>{setTab('map');fitTrip()};
-  const st=sortedStops(t);
-  if(!st.length){box.innerHTML+='<div class="empty">아직 간 곳이 없어요.<br>카페, 식당, 숙소, 관광지를 차례로 추가해 보세요.</div>';return}
-  let last=null,n=0;
+  const st=sortedStops(t).filter(s=>(F.chip==='all'||s.kind===F.chip)&&hit(F.q,s.name,s.note,s.from,s.to,KIND[s.kind].label));
+  if(!st.length){box.innerHTML+='<div class="empty">'+(filtering()?'조건에 맞는 기록이 없어요.':'아직 기록이 없어요.<br>카페, 식당, 숙소, 관광지, 교통편을 차례로 추가해 보세요.')+'</div>';return}
+  let last=null;
   st.forEach(s=>{
     const key=s.date||'';
     if(key!==last){last=key;
-      const h=document.createElement('div');h.className='day';
+      const d=document.createElement('div');d.className='day';
       const dn=t.start&&key?dayDiff(t.start,key)+1:0;
       const daySum=st.filter(x=>(x.date||'')===key).reduce((a,x)=>a+(+x.cost||0),0);
-      h.innerHTML='<b>'+(key?(dn>0?dn+'일차 · ':'')+mdw(key):'날짜 미정')+'</b><span>'+(daySum?won(daySum):'')+'</span>';
-      box.appendChild(h);
+      d.innerHTML='<b>'+(key?(dn>0?dn+'일차 · ':'')+mdw(key):'날짜 미정')+'</b><span>'+(daySum?won(daySum):'')+'</span>';
+      box.appendChild(d);
     }
-    n++;
-    const meta=[s.time,s.kind==='lodging'&&s.nights?s.nights+'박':'',s.cost?won(s.cost):''].filter(Boolean).join(' · ');
-    box.appendChild(card(s.photos[0]||KIND[s.kind].icon,{tag:KIND[s.kind].label,text:s.name||'이름 없는 곳'},meta||(s.note?s.note.slice(0,30):''),
+    const mode=s.kind==='move'?MODES.find(m=>m[0]===s.mode):null;
+    const meta=[mode?mode[1]:'',s.time,s.kind==='lodging'&&s.nights?s.nights+'박':'',s.cost?won(s.cost):''].filter(Boolean).join(' · ');
+    box.appendChild(card(s.photos[0]||(mode?mode[2]:KIND[s.kind].icon),{tag:KIND[s.kind].label,text:stopName(s)},meta||(s.note?s.note.slice(0,30):''),
       s.rating?'★'.repeat(s.rating):'',()=>openStop(s.id)));
   });
 }
@@ -799,14 +999,109 @@ function stars(el,get,set,scoreEl){
 function shrink(file,max=1000,q=.78){return new Promise(res=>{const r=new FileReader();r.onload=()=>{const im=new Image();im.onload=()=>{
   const s=Math.min(1,max/Math.max(im.width,im.height));const c=document.createElement('canvas');
   c.width=im.width*s;c.height=im.height*s;c.getContext('2d').drawImage(im,0,0,c.width,c.height);res(c.toDataURL('image/jpeg',q))};im.src=r.result};r.readAsDataURL(file)})}
+/* 사진: 서버의 파일 저장소(Storage)에 따로 보관해요. 기록에는 'sb:번호'만 적고,
+   보이는 사진만 그때그때 받아서 폰에 저장해 둡니다 (예전 방식 data: 사진도 그대로 보여요) */
+const BUCKET='photos';
+const imgMem=new Map();
+const isRef=r=>typeof r==='string'&&r.startsWith('sb:');
+const refId=r=>r.slice(3);
+function blobShrink(file,max,q){
+  return new Promise((res,no)=>{
+    const fr=new FileReader();
+    fr.onload=()=>{const im=new Image();
+      im.onload=()=>{const s=Math.min(1,max/Math.max(im.width,im.height));const c=document.createElement('canvas');
+        c.width=Math.round(im.width*s);c.height=Math.round(im.height*s);c.getContext('2d').drawImage(im,0,0,c.width,c.height);
+        c.toBlob(b=>b?res(b):no(new Error('blob')),'image/jpeg',q)};
+      im.onerror=()=>no(new Error('img'));im.src=fr.result};
+    fr.onerror=()=>no(fr.error);fr.readAsDataURL(file);
+  });
+}
+const newPhotoId=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,8);
+async function addPhotoFile(file,opt={}){
+  if(!SB_URL)return shrink(file,opt.max||1000,opt.q||.78); // 서버 설정이 없으면 예전 방식(이 폰에만 저장)
+  const id=newPhotoId();
+  await idb.set('img:'+id,await blobShrink(file,opt.max||1000,opt.q||.78));
+  if(!opt.noThumb)await idb.set('th:'+id,await blobShrink(file,320,.72));
+  const q=(await idb.get('uploads'))||[];q.push({id,th:!opt.noThumb});await idb.set('uploads',q);
+  flushUploads();
+  return 'sb:'+id;
+}
+let flushing=false;
+async function flushUploads(){
+  if(flushing||!sb||!sbUser)return;
+  flushing=true;
+  try{
+    let q=(await idb.get('uploads'))||[];
+    while(q.length){
+      const u=q[0],bk=sb.storage.from(BUCKET);
+      const full=await idb.get('img:'+u.id);
+      if(full){const {error}=await bk.upload('u/'+u.id+'.jpg',full,{contentType:'image/jpeg',upsert:true});if(error)throw error}
+      if(u.th){const th=await idb.get('th:'+u.id);if(th){const {error}=await bk.upload('u/'+u.id+'_t.jpg',th,{contentType:'image/jpeg',upsert:true});if(error)throw error}}
+      q=((await idb.get('uploads'))||[]).filter(x=>x.id!==u.id);await idb.set('uploads',q);
+    }
+  }catch(e){console.warn('사진 올리기 실패, 나중에 다시 시도해요',e)}
+  flushing=false;
+}
+async function photoURL(ref,thumb){
+  if(!isRef(ref))return ref||'';
+  const id=refId(ref),key=(thumb?'th:':'img:')+id;
+  if(imgMem.has(key))return imgMem.get(key);
+  let blob=null;try{blob=await idb.get(key)}catch(e){}
+  if(!blob){
+    await authReady;
+    if(sb&&sbUser){
+      const {data,error}=await sb.storage.from(BUCKET).download('u/'+id+(thumb?'_t':'')+'.jpg');
+      if(!error&&data){blob=data;try{await idb.set(key,blob)}catch(e){}}
+    }
+    if(!blob&&thumb)return photoURL(ref,false); // 미리보기가 없으면 원본으로
+  }
+  if(!blob)return '';
+  const url=URL.createObjectURL(blob);imgMem.set(key,url);return url;
+}
+function setImg(el,ref,thumb){photoURL(ref,thumb).then(u=>{if(u)el.src=u}).catch(()=>{})}
+async function dropPhotos(refs){
+  const ids=(refs||[]).filter(isRef).map(refId);
+  if(!ids.length)return;
+  for(const id of ids){
+    imgMem.delete('img:'+id);imgMem.delete('th:'+id);
+    try{await idb.del('img:'+id);await idb.del('th:'+id)}catch(e){}
+  }
+  try{await idb.set('uploads',((await idb.get('uploads'))||[]).filter(x=>!ids.includes(x.id)))}catch(e){}
+  if(sb&&sbUser){try{await sb.storage.from(BUCKET).remove(ids.flatMap(id=>['u/'+id+'.jpg','u/'+id+'_t.jpg']))}catch(e){}}
+}
+// 예전 방식으로 기록 안에 들어 있던 사진을 파일 저장소로 옮김
+async function migratePhotos(){
+  if(!SB_URL||!sb||!sbUser)return;
+  // 사진 보관함이 아직 없으면 옮기지 않음 (사진이 사라지지 않게)
+  try{const {error}=await sb.storage.from(BUCKET).list('u',{limit:1});if(error)return}catch(e){return}
+  let changed=false;
+  const conv=async(ref,opt)=>{
+    if(typeof ref!=='string'||!ref.startsWith('data:'))return ref;
+    try{
+      const blob=await (await fetch(ref)).blob();
+      const r=await addPhotoFile(new File([blob],'m.jpg',{type:blob.type||'image/jpeg'}),opt);
+      changed=true;return r;
+    }catch(e){return ref}
+  };
+  for(const p of db.places)for(let i=0;i<p.photos.length;i++)p.photos[i]=await conv(p.photos[i],{max:1000,q:.85});
+  for(const t of db.trips)for(const s of t.stops)for(let i=0;i<s.photos.length;i++)s.photos[i]=await conv(s.photos[i],{max:1000,q:.85});
+  if(db.home.photo)db.home.photo=await conv(db.home.photo,{max:1600,q:.85,noThumb:true});
+  if(changed){await save();refreshUI()}
+}
+// 크게 보기
+function viewPhoto(ref){
+  const v=$('viewScreen');$('viewImg').removeAttribute('src');v.hidden=false;
+  photoURL(ref,false).then(u=>{if(u)$('viewImg').src=u});
+}
+$('viewScreen').onclick=()=>{$('viewScreen').hidden=true;$('viewImg').removeAttribute('src')};
 function mountPhotos(box,fileEl,getArr){
   function draw(){
     box.innerHTML='';
     getArr().forEach((src,i)=>{
       const d=document.createElement('div');d.className='ph';
       d.innerHTML='<img alt="방문 사진 '+(i+1)+'"><button type="button" aria-label="사진 삭제">×</button>';
-      d.querySelector('img').src=src;
-      d.querySelector('button').onclick=()=>{getArr().splice(i,1);draw();save()};
+      const im=d.querySelector('img');setImg(im,src,true);im.onclick=()=>viewPhoto(src);
+      d.querySelector('button').onclick=e=>{e.stopPropagation();const r=getArr().splice(i,1)[0];dropPhotos([r]);draw();save()};
       box.appendChild(d);
     });
     const a=document.createElement('div');a.className='addph';a.tabIndex=0;a.textContent='+ 사진 추가';
@@ -814,7 +1109,12 @@ function mountPhotos(box,fileEl,getArr){
     a.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();fileEl.click()}};
     box.appendChild(a);
   }
-  fileEl.onchange=async e=>{for(const f of e.target.files)getArr().push(await shrink(f));e.target.value='';draw();save()};
+  fileEl.onchange=async e=>{
+    const files=[...e.target.files];e.target.value='';
+    const a=box.querySelector('.addph');if(a)a.textContent='올리는 중…';
+    for(const f of files){try{getArr().push(await addPhotoFile(f))}catch(err){console.warn(err)}}
+    draw();save();
+  };
   draw();
 }
 function armDelete(btn,fn){
@@ -857,7 +1157,7 @@ function openEdit(id,isNew){
   mountPhotos($('photos'),$('file'),()=>cur.photos);
   drawKind();drawAcid();drawTotal();
   setSaved('');$('editBody').scrollTop=0;
-  armDelete($('delBtn'),()=>{db.places=db.places.filter(p=>p!==cur);cur=null;save();$('editScreen').hidden=true;drawMarkers();if(!$('listScreen').hidden)drawList()});
+  armDelete($('delBtn'),()=>{dropPhotos(cur.photos);db.places=db.places.filter(p=>p!==cur);cur=null;save();$('editScreen').hidden=true;drawMarkers();if(!$('listScreen').hidden)drawList()});
   $('editScreen').hidden=false;
   if(isNew)setTimeout(()=>$('name').focus(),50);
 }
@@ -875,7 +1175,7 @@ $('moveBtn').onclick=()=>{const p=cur;goMove(p,'editScreen',()=>openEdit(p.id),'
 
 /* 여행 정보 화면 */
 const tFields=[['tTitle',t=>t.title,(t,v)=>t.title=v],['tStart',t=>t.start,(t,v)=>t.start=v],['tEnd',t=>t.end,(t,v)=>t.end=v],
-  ['tWith',t=>t.with,(t,v)=>t.with=v],['tNote',t=>t.note,(t,v)=>t.note=v]];
+  ['tWith',t=>t.with,(t,v)=>t.with=v],['tBudget',t=>t.budget,(t,v)=>t.budget=v],['tNote',t=>t.note,(t,v)=>t.note=v]];
 tFields.forEach(([id,get,set])=>{$(id).oninput=()=>{set(curTrip,$(id).value);queueSave();if(id==='tTitle')$('tHead').textContent=curTrip.title||'새 여행'}});
 function openTrip(id,isNew){
   curTrip=db.trips.find(t=>t.id===id);if(!curTrip)return;
@@ -883,7 +1183,7 @@ function openTrip(id,isNew){
   $('tHead').textContent=curTrip.title||'새 여행';
   $('tWithList').innerHTML=[...new Set(db.trips.map(t=>t.with).concat(db.places.map(p=>p.with)).filter(Boolean))].map(v=>'<option value="'+esc(v)+'">').join('');
   setSaved('');
-  armDelete($('tDel'),()=>{db.trips=db.trips.filter(t=>t!==curTrip);if(activeTrip===curTrip)activeTrip=null;curTrip=null;save();$('tripScreen').hidden=true;drawMarkers();drawList()});
+  armDelete($('tDel'),()=>{dropPhotos(curTrip.stops.flatMap(x=>x.photos));db.trips=db.trips.filter(t=>t!==curTrip);if(activeTrip===curTrip)activeTrip=null;curTrip=null;save();$('tripScreen').hidden=true;drawMarkers();drawList()});
   $('tripScreen').hidden=false;
   if(isNew)setTimeout(()=>$('tTitle').focus(),50);
 }
@@ -895,15 +1195,22 @@ $('tBack').onclick=()=>{
 
 /* 여행 장소 기록 화면 */
 $('sKindSeg').innerHTML=Object.keys(KIND).map(k=>'<button type="button" data-k="'+k+'">'+KIND[k].label+'</button>').join('');
+$('sMode').innerHTML='<option value="">선택</option>'+MODES.map(m=>'<option value="'+m[0]+'">'+m[2]+' '+m[1]+'</option>').join('');
 function drawStopKind(){
-  document.querySelectorAll('#sKindSeg button').forEach(b=>b.classList.toggle('on',b.dataset.k===curStop.kind));
-  $('sNightsBox').hidden=curStop.kind!=='lodging';
-  $('sCostHint').textContent=curStop.kind==='lodging'?'(숙박 전체 금액)':'';
+  const k=curStop.kind;
+  document.querySelectorAll('#sKindSeg button').forEach(b=>b.classList.toggle('on',b.dataset.k===k));
+  $('sNightsBox').hidden=k!=='lodging';
+  $('sMoveBox').hidden=k!=='move';$('sPinBox').hidden=k==='move';
+  $('sNameLbl').textContent=k==='move'?'제목 (비워 두면 출발지 → 도착지)':'장소 이름';
+  $('sCostHint').textContent=k==='lodging'?'(숙박 전체 금액)':k==='move'?'(요금, 주유비, 통행료 등)':'';
+  $('sHead').textContent=stopTitle(curStop);
 }
 document.querySelectorAll('#sKindSeg button').forEach(b=>b.onclick=()=>{curStop.kind=b.dataset.k;drawStopKind();drawMarkers();queueSave()});
+$('sMode').onchange=()=>{curStop.mode=$('sMode').value;queueSave()};
 const sFields=[['sName',s=>s.name,(s,v)=>s.name=v],['sDate',s=>s.date,(s,v)=>s.date=v],['sTime',s=>s.time,(s,v)=>s.time=v],
-  ['sCost',s=>s.cost,(s,v)=>s.cost=v],['sNights',s=>s.nights,(s,v)=>s.nights=v],['sNote',s=>s.note,(s,v)=>s.note=v]];
-sFields.forEach(([id,get,set])=>{$(id).oninput=()=>{set(curStop,$(id).value);queueSave();if(id==='sName'){$('sHead').textContent=curStop.name||'새 장소';drawMarkers()}if(id==='sDate'||id==='sTime')drawMarkers()}});
+  ['sCost',s=>s.cost,(s,v)=>s.cost=v],['sNights',s=>s.nights,(s,v)=>s.nights=v],['sNote',s=>s.note,(s,v)=>s.note=v],
+  ['sFrom',s=>s.from,(s,v)=>s.from=v],['sTo',s=>s.to,(s,v)=>s.to=v]];
+sFields.forEach(([id,get,set])=>{$(id).oninput=()=>{set(curStop,$(id).value);queueSave();if(id==='sName'||id==='sFrom'||id==='sTo')$('sHead').textContent=stopTitle(curStop);if(id==='sName'||id==='sDate'||id==='sTime')drawMarkers()}});
 function addStop(o){
   const t=activeTrip;if(!t)return;
   const s=normStop(Object.assign({id:'s'+Date.now(),date:t.start||today()},o));
@@ -915,14 +1222,14 @@ function openStop(id,isNew){
   const stop=curStop;
   cancelMode();
   sFields.forEach(([fid,get])=>$(fid).value=get(stop)??'');
-  $('sHead').textContent=stop.name||'새 장소';
+  $('sMode').value=stop.mode||'';
   stars($('sStars'),()=>stop.rating,v=>stop.rating=v,$('sScore'));
   mountPhotos($('sPhotos'),$('sFile'),()=>stop.photos);
   drawStopKind();setSaved('');
-  armDelete($('sDel'),()=>{t.stops=t.stops.filter(x=>x!==stop);curStop=null;save();$('stopScreen').hidden=true;drawMarkers();if(!$('listScreen').hidden)drawList()});
+  armDelete($('sDel'),()=>{dropPhotos(stop.photos);t.stops=t.stops.filter(x=>x!==stop);curStop=null;save();$('stopScreen').hidden=true;drawMarkers();if(!$('listScreen').hidden)drawList()});
   $('sMove').onclick=()=>goMove(stop,'stopScreen',()=>openStop(stop.id),'새 위치를 지도에서 눌러 주세요');
   $('stopScreen').hidden=false;
-  if(isNew)setTimeout(()=>$('sName').focus(),50);
+  if(isNew)setTimeout(()=>$(stop.kind==='move'?'sFrom':'sName').focus(),50);
 }
 $('sBack').onclick=()=>{
   clearTimeout(saveTimer);save();$('stopScreen').hidden=true;drawMarkers();
@@ -1033,7 +1340,7 @@ function startRealtime(){
 }
 async function startSync(){
   syncOn=true;setSync('동기화 중…');
-  try{await syncPull();await syncPush();startRealtime()}
+  try{await syncPull();await migratePhotos();await syncPush();flushUploads();startRealtime()}
   catch(e){setSync('오프라인 · 연결되면 자동으로 올라가요');console.warn('동기화 시작 실패',e)}
 }
 function showLogin(){$('loginScreen').hidden=false;$('logoutBtn').hidden=true}
@@ -1052,16 +1359,168 @@ $('logoutBtn').onclick=async()=>{
   sbUser=null;setSync('');showLogin();
 };
 async function initAuth(){
-  if(!SB_URL||!SB_KEY){setSync('공유 꺼짐: 설정 파일을 읽지 못했어요');return}
-  if(!window.supabase){setSync('공유 꺼짐: 로그인 도구를 불러오지 못했어요');return}
+  if(!SB_URL||!SB_KEY){setSync('공유 꺼짐: 설정 파일을 읽지 못했어요');authDone();return}
+  if(!window.supabase){setSync('공유 꺼짐: 로그인 도구를 불러오지 못했어요');authDone();return}
   sb=window.supabase.createClient(SB_URL,SB_KEY);
   let s=null;try{const r=await sb.auth.getSession();s=r.data.session}catch(e){}
+  if(s)sbUser=s.user;
+  authDone();
   if(s){sbUser=s.user;$('logoutBtn').hidden=false;startSync()}
   else if(navigator.onLine)showLogin();
   else setSync('오프라인 · 이 폰에만 저장 중');
   window.addEventListener('online',()=>{if(sbUser)startSync();else showLogin()});
-  document.addEventListener('visibilitychange',()=>{if(!document.hidden&&sbUser&&syncOn)syncPull().then(()=>syncPush()).catch(()=>{})});
+  document.addEventListener('visibilitychange',()=>{if(!document.hidden&&sbUser&&syncOn)syncPull().then(()=>syncPush()).then(()=>flushUploads()).catch(()=>{})});
 }
+
+/* 앱 잠금(PIN): 이 폰에서만 켜고 끕니다. 번호는 폰 안에 암호화된 값으로만 저장돼요 */
+const PIN_KEY='fam_pin_v1';
+async function sha(s){
+  try{const b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode('fam|'+s));return [...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('')}
+  catch(e){let h=0;for(const c of 'fam|'+s)h=(h*31+c.charCodeAt(0))|0;return 'x'+h}
+}
+const pinStored=()=>{try{return localStorage.getItem(PIN_KEY)||''}catch(e){return ''}};
+const pinCheck=async v=>(await sha(v))===pinStored();
+let padOpen=false;
+function askPin(title,opt={}){
+  const {verify=null,cancel=true,forgot=false}=opt;
+  return new Promise(res=>{
+    padOpen=true;let buf='';
+    $('lockTitle').textContent=title;$('lockErr').textContent='';
+    $('lockCancel').hidden=!cancel;$('lockForgot').hidden=!forgot;$('lockForgot').textContent='번호를 잊었어요';
+    $('lockScreen').hidden=false;
+    const dots=()=>[...$('lockDots').children].forEach((d,i)=>d.classList.toggle('on',i<buf.length));
+    dots();
+    const end=v=>{padOpen=false;$('lockScreen').hidden=true;$('lockKeys').onclick=null;$('lockCancel').onclick=null;$('lockForgot').onclick=null;document.removeEventListener('keydown',onKey);res(v)};
+    async function finish(){
+      const pin=buf;
+      if(verify&&!(await verify(pin))){
+        buf='';dots();$('lockErr').textContent='번호가 맞지 않아요';
+        const dd=$('lockDots');dd.classList.remove('shake');void dd.offsetWidth;dd.classList.add('shake');return;
+      }
+      end(pin);
+    }
+    function press(k){
+      if(k==='del'){buf=buf.slice(0,-1);dots();return}
+      if(buf.length>=4)return;buf+=k;dots();$('lockErr').textContent='';
+      if(buf.length===4)setTimeout(finish,120);
+    }
+    const onKey=e=>{if(/^[0-9]$/.test(e.key))press(e.key);else if(e.key==='Backspace')press('del')};
+    document.addEventListener('keydown',onKey);
+    $('lockKeys').onclick=e=>{const b=e.target.closest('button[data-k]');if(b)press(b.dataset.k)};
+    $('lockCancel').onclick=()=>end(null);
+    let armed=false;
+    $('lockForgot').onclick=async()=>{
+      if(!armed){armed=true;$('lockForgot').textContent='번호를 해제하고 다시 로그인';setTimeout(()=>{armed=false;$('lockForgot').textContent='번호를 잊었어요'},4000);return}
+      try{localStorage.removeItem(PIN_KEY)}catch(e){}
+      end('forgot');
+      if(sb){try{await sb.auth.signOut()}catch(e){}sbUser=null;syncOn=false;showLogin()}
+    };
+  });
+}
+async function unlockLoop(){
+  if(!pinStored()||padOpen)return;
+  await askPin('비밀번호를 입력해 주세요',{verify:pinCheck,cancel:false,forgot:true});
+}
+let hiddenAt=0;
+document.addEventListener('visibilitychange',()=>{
+  if(document.hidden){hiddenAt=Date.now();return}
+  if(pinStored()&&hiddenAt&&Date.now()-hiddenAt>60000)unlockLoop();
+});
+
+/* 설정 화면 */
+function drawSettings(){
+  const on=!!pinStored();
+  $('setPinState').textContent=on?'켜짐 · 이 폰에서만 적용돼요':'꺼짐 · 필요하면 켜 보세요';
+  $('setPinOn').hidden=on;$('setPinChange').hidden=!on;$('setPinOff').hidden=!on;
+  $('appVer').textContent='앱 버전 '+APP_VER;
+  idb.get('uploads').then(q=>{const n=(q||[]).length;$('setPhotoState').textContent=n?'서버에 올리는 중 '+n+'장 (연결되면 자동으로 올라가요)':'모두 서버에 보관 중'}).catch(()=>{});
+}
+function openSettings(){drawSettings();$('setScreen').hidden=false}
+$('homeSet').onclick=openSettings;
+$('setBack').onclick=()=>{$('setScreen').hidden=true};
+async function newPinFlow(){
+  const p1=await askPin('새 비밀번호 4자리를 입력해 주세요');if(!p1||p1==='forgot')return false;
+  const p2=await askPin('한 번 더 입력해 주세요',{verify:async v=>v===p1});if(!p2||p2==='forgot')return false;
+  try{localStorage.setItem(PIN_KEY,await sha(p1))}catch(e){return false}
+  return true;
+}
+$('setPinOn').onclick=async()=>{await newPinFlow();drawSettings()};
+$('setPinChange').onclick=async()=>{
+  const c=await askPin('현재 비밀번호를 입력해 주세요',{verify:pinCheck});
+  if(c&&c!=='forgot')await newPinFlow();drawSettings();
+};
+$('setPinOff').onclick=async()=>{
+  const c=await askPin('끄려면 현재 비밀번호를 입력해 주세요',{verify:pinCheck});
+  if(c&&c!=='forgot'){try{localStorage.removeItem(PIN_KEY)}catch(e){}}
+  drawSettings();
+};
+
+/* 기념일 (D+) */
+const DEFAULT_ANNIS=[
+  {n:'기현',d:'1987-02-09',t:'birth'},{n:'진아',d:'1986-10-01',t:'birth'},{n:'한율',d:'2015-11-20',t:'birth'},
+  {n:'이현',d:'2018-03-16',t:'birth'},{n:'서비',d:'2020-04-16',t:'birth'},{n:'구름',d:'2023-11-30',t:'anniv'},{n:'결혼',d:'2012-02-04',t:'anniv'}
+];
+const getAnnis=()=>Array.isArray(db.home.annis)?db.home.annis:DEFAULT_ANNIS;
+function ownAnnis(){if(!Array.isArray(db.home.annis))db.home.annis=DEFAULT_ANNIS.map(a=>Object.assign({},a));return db.home.annis}
+function annInfo(a){
+  const [y,m,d]=a.d.split('-').map(Number);
+  const n=new Date(),t0=new Date(n.getFullYear(),n.getMonth(),n.getDate()),start=new Date(y,m-1,d);
+  const since=Math.round((t0-start)/86400000);
+  let next=new Date(t0.getFullYear(),m-1,d);if(next<t0)next=new Date(t0.getFullYear()+1,m-1,d);
+  const until=Math.round((next-t0)/86400000);
+  const years=t0.getFullYear()-y-(t0<new Date(t0.getFullYear(),m-1,d)?1:0);
+  return {since,until,years,future:since<0};
+}
+function annWord(a){return a.t==='birth'?'생일':'기념일'}
+function annPill(a,i){
+  if(i.future)return [a.n,'D-'+(-i.since).toLocaleString('ko-KR')];
+  if(i.until===0)return [a.n+' 오늘이 '+annWord(a),'♡'];
+  if(i.until<=30)return [a.n+' '+annWord(a),'D-'+i.until];
+  return [a.n,'D+'+i.since.toLocaleString('ko-KR')];
+}
+let ddTimer=null,ddIdx=0;
+function drawPill(){
+  clearInterval(ddTimer);
+  const list=getAnnis().map(a=>({a,i:annInfo(a)}));
+  const pill=$('ddPill');
+  if(!list.length){pill.hidden=true;return}
+  // 곧 다가오는 기념일을 먼저 보여 줌
+  list.sort((x,y)=>(x.i.until<=30&&!x.i.future?x.i.until:999)-(y.i.until<=30&&!y.i.future?y.i.until:999));
+  const show=k=>{const [n,v]=annPill(list[k].a,list[k].i);$('ddName').textContent=n;$('ddVal').textContent=v};
+  pill.hidden=false;ddIdx=0;show(0);
+  if(list.length>1)ddTimer=setInterval(()=>{
+    pill.classList.add('fade');
+    setTimeout(()=>{ddIdx=(ddIdx+1)%list.length;show(ddIdx);pill.classList.remove('fade')},260);
+  },4500);
+}
+$('ddPill').onclick=()=>{drawAnn();$('annScreen').hidden=false};
+$('setAnn').onclick=()=>{drawAnn();$('annScreen').hidden=false};
+$('annBack').onclick=()=>{$('annScreen').hidden=true;drawPill()};
+function drawAnn(){
+  const box=$('annList');box.innerHTML='';
+  getAnnis().forEach((a,idx)=>{
+    const i=annInfo(a),row=document.createElement('div');row.className='arow';
+    const sub=i.future?'D-'+(-i.since)+'일 남음':(a.t==='birth'?'만 '+i.years+'세':i.years+'주년')+' · '+(i.until===0?'오늘이 '+annWord(a)+'이에요':'다음 '+annWord(a)+'까지 D-'+i.until);
+    row.innerHTML='<div class="an"><b></b><span></span></div><div class="dv"></div><button class="ibtn danger" type="button">삭제</button>';
+    row.querySelector('b').textContent=a.n;
+    row.querySelector('span').textContent=a.d.replace(/-/g,'.')+' · '+sub;
+    row.querySelector('.dv').textContent=i.future?'D-'+(-i.since).toLocaleString('ko-KR'):'D+'+i.since.toLocaleString('ko-KR');
+    const del=row.querySelector('button');let armed=false,tm;
+    del.onclick=()=>{
+      if(!armed){armed=true;del.textContent='정말?';clearTimeout(tm);tm=setTimeout(()=>{armed=false;del.textContent='삭제'},3000);return}
+      ownAnnis().splice(idx,1);queueSave();drawAnn();
+    };
+    box.appendChild(row);
+  });
+  if(!getAnnis().length)box.innerHTML='<div class="empty">기념일이 없어요. 아래에서 추가해 보세요.</div>';
+}
+$('annAdd').onclick=()=>{
+  const n=$('annName').value.trim(),d=$('annDate').value;
+  if(!n||!d){$('annErr').textContent='이름과 날짜를 모두 입력해 주세요.';return}
+  $('annErr').textContent='';
+  ownAnnis().push({n,d,t:$('annType').value});
+  $('annName').value='';$('annDate').value='';queueSave();drawAnn();
+};
 
 /* 시작 */
 (async function(){
@@ -1080,6 +1539,7 @@ async function initAuth(){
   drawHome();
   initAuth();
 })();
+unlockLoop();
 if('serviceWorker' in navigator&&location.protocol.startsWith('http'))navigator.serviceWorker.register('sw.js').catch(()=>{});
 </script>
 </body>
