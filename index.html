@@ -286,6 +286,30 @@ body.trip .chip.on{background:var(--trip);border-color:var(--trip)}
 .viewer img{max-width:100%;max-height:100%;object-fit:contain}
 .viewer .vclose{position:absolute;top:calc(12px + env(safe-area-inset-top,0px));right:max(14px,env(safe-area-inset-right,0px));border:0;border-radius:999px;background:rgba(255,255,255,.2);color:#fff;padding:6px 14px;cursor:pointer}
 .ph img{cursor:zoom-in}
+
+/* 가보고 싶은 곳 · 지난 오늘 · 통계 · 휴지통 */
+.mbtn.wish .ic{background:#c9708f}
+.home .memory{display:grid;gap:4px;border:1px solid rgba(255,255,255,.28);border-radius:16px;background:rgba(30,22,18,.42);
+  backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);color:#fff;padding:10px 14px}
+.home .memory[hidden]{display:none}
+.home .memory .mh{font-size:12px;opacity:.85}
+.home .memory button{border:0;background:none;color:inherit;text-align:left;padding:3px 0;font-size:15px;cursor:pointer;display:flex;gap:8px;align-items:baseline;min-width:0}
+.home .memory button span.y{flex:none;font-size:12px;opacity:.85}
+.home .memory button span.t{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.home.light .memory{background:rgba(255,255,255,.58);border-color:rgba(60,40,30,.14);color:#3b2a20}
+.bars{display:grid;gap:6px}
+.brow{display:grid;grid-template-columns:48px 1fr 34px;gap:8px;align-items:center;font-size:13px;color:var(--muted)}
+.brow i{display:block;height:10px;border-radius:999px;background:var(--accent);min-width:2px}
+.brow b{color:var(--fg);text-align:right;font-variant-numeric:tabular-nums}
+.kv{display:flex;justify-content:space-between;gap:12px;padding:8px 0;border-bottom:1px solid var(--line)}
+.kv:last-child{border-bottom:0}
+.kv span:last-child{color:var(--muted);text-align:right;font-variant-numeric:tabular-nums}
+.bigstat{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:10px}
+.bigstat div{background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:10px 12px;color:var(--muted);font-size:12px}
+.bigstat b{display:block;color:var(--fg);font-size:18px;font-variant-numeric:tabular-nums;margin-bottom:2px}
+.chiprow{display:flex;gap:6px;overflow-x:auto;padding-bottom:6px;margin-bottom:10px;scrollbar-width:none}
+.chiprow::-webkit-scrollbar{display:none}
+.wmeta{font-size:12px;color:var(--muted)}
 </style>
 </head>
 <body>
@@ -453,6 +477,8 @@ body.trip .chip.on{background:var(--trip);border-color:var(--trip)}
       <div><h1>우리가족기록♡</h1><div class="date" id="homeDate"></div>
         <button class="dd" id="ddPill" type="button" hidden aria-label="기념일 보기"><span id="ddName"></span><b id="ddVal"></b></button></div>
       <div class="btns">
+        <button class="cam" id="homeStat" type="button" aria-label="통계">
+          <svg viewBox="0 0 24 24"><path d="M5 20V11M12 20V4M19 20v-6"/></svg></button>
         <button class="cam" id="homeSet" type="button" aria-label="설정">
           <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button>
         <button class="cam" id="homeCam" type="button" aria-label="배경 사진 바꾸기">
@@ -466,7 +492,11 @@ body.trip .chip.on{background:var(--trip);border-color:var(--trip)}
       <button class="mbtn trip" id="goTrip" type="button">
         <span class="ic"><svg viewBox="0 0 24 24"><rect x="4" y="8" width="16" height="11" rx="2"/><path d="M9 8V6a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/><path d="M4 13h16"/></svg></span>
         <span><div class="t">여행</div><div class="s" id="homeTripSub"></div></span></button>
+      <button class="mbtn wish" id="goWish" type="button">
+        <span class="ic"><svg viewBox="0 0 24 24"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.5A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/></svg></span>
+        <span><div class="t">가보고 싶은 곳</div><div class="s" id="homeWishSub"></div></span></button>
     </div>
+    <div class="memory" id="homeMemory" hidden></div>
   </div>
 </div>
 
@@ -494,6 +524,14 @@ body.trip .chip.on{background:var(--trip);border-color:var(--trip)}
       <div class="setrow">
         <div class="sl"><b>사진 보관</b><span id="setPhotoState"></span></div>
       </div>
+      <div class="setrow">
+        <div class="sl"><b>사진 사용량</b><span id="setPhotoUse"></span></div>
+        <div class="setgrp"><button class="btn" id="setPhotoClean" type="button">정리하기</button></div>
+      </div>
+      <div class="setrow">
+        <div class="sl"><b>휴지통</b><span id="setTrashState"></span></div>
+        <div class="setgrp"><button class="btn" id="setTrash" type="button">열기</button></div>
+      </div>
       <div class="setrow" style="border-bottom:0"><div class="sl"><b>우리가족기록♡</b><span id="appVer"></span></div></div>
     </div>
   </div>
@@ -514,6 +552,57 @@ body.trip .chip.on{background:var(--trip);border-color:var(--trip)}
         <button class="btn on" id="annAdd" type="button">추가</button>
       </div>
     </div>
+  </div>
+</div>
+
+<!-- 가보고 싶은 곳 -->
+<div class="screen editor over" id="wishScreen" hidden>
+  <div class="page">
+    <div class="bar"><button class="ibtn" id="wishBack" type="button">← 닫기</button><h1>가보고 싶은 곳</h1><button class="ibtn" id="wishAdd" type="button">+ 추가</button></div>
+    <div class="filters"><div class="chips" id="wishChips"></div></div>
+    <div class="scroll" id="wishBody"></div>
+  </div>
+</div>
+<div class="screen editor over" id="wishEdit" hidden>
+  <div class="page">
+    <div class="bar"><button class="ibtn" id="wBack" type="button">← 닫기</button><h1 id="wHead">가보고 싶은 곳</h1><button class="ibtn danger" id="wDel" type="button">삭제</button></div>
+    <div class="scroll">
+      <div class="seg" id="wKindSeg" style="margin-bottom:12px"></div>
+      <div style="margin-bottom:14px">
+        <label class="lbl" for="wSearch">이름으로 찾아서 채우기 (선택)</label>
+        <input type="search" id="wSearch" placeholder="예: 스타벅스 동백" autocomplete="off">
+        <div class="results" id="wResults" hidden></div>
+      </div>
+      <div style="margin-bottom:12px"><label class="lbl" for="wName">이름</label><input type="text" id="wName" placeholder="카페나 여행지 이름"></div>
+      <div style="margin-bottom:12px"><label class="lbl" for="wAddr">주소</label><input type="text" id="wAddr"></div>
+      <div class="row" style="margin-bottom:12px">
+        <div><label class="lbl" for="wOff">휴무일</label><input type="text" id="wOff" placeholder="예: 매주 월요일"></div>
+        <div><label class="lbl" for="wHours">영업시간</label><input type="text" id="wHours" placeholder="예: 10:00~21:00"></div>
+      </div>
+      <div style="margin-bottom:12px"><label class="lbl" for="wPark">주차 정보</label><input type="text" id="wPark" placeholder="예: 건물 지하 2시간 무료"></div>
+      <div class="actions">
+        <button class="btn" id="wMap" type="button">카카오맵에서 찾아보기</button>
+        <button class="btn on" id="wDone" type="button">다녀왔어요 → 기록으로</button>
+      </div>
+      <div class="hint" style="color:var(--muted);font-size:12px">영업시간·휴무일은 카카오맵에서 확인한 뒤 적어 두세요.</div>
+      <div class="saved"></div>
+    </div>
+  </div>
+</div>
+
+<!-- 통계 -->
+<div class="screen editor over" id="statScreen" hidden>
+  <div class="page">
+    <div class="bar"><button class="ibtn" id="statBack" type="button">← 닫기</button><h1>우리 기록 통계</h1></div>
+    <div class="scroll"><div class="chiprow" id="stChips"></div><div id="statBody"></div></div>
+  </div>
+</div>
+
+<!-- 휴지통 -->
+<div class="screen editor over" id="trashScreen" hidden>
+  <div class="page">
+    <div class="bar"><button class="ibtn" id="trashBack" type="button">← 닫기</button><h1>휴지통</h1></div>
+    <div class="scroll"><div class="hint" style="color:var(--muted);font-size:13px;margin-bottom:8px">지운 기록은 30일 동안 여기에 보관돼요. 그 뒤에는 사진과 함께 완전히 지워져요.</div><div id="trashBody"></div></div>
   </div>
 </div>
 
@@ -561,7 +650,7 @@ body.trip .chip.on{background:var(--trip);border-color:var(--trip)}
 </div></nav>
 
 <script>
-const APP_VER='9';
+const APP_VER='12';
 const $=id=>document.getElementById(id);
 const ACID=[['매우 낮음','쌉쌀하고 묵직한 맛'],['낮음','고소하고 부드러운 맛'],['중간','균형 잡힌 산미'],['높음','과일처럼 상큼한 산미'],['매우 높음','레몬처럼 날카로운 산미']];
 const KIND={spot:{label:'명소',icon:'📍'},food:{label:'식당',icon:'🍽️'},cafe:{label:'카페',icon:'☕'},bakery:{label:'빵집',icon:'🥐'},lodging:{label:'숙소',icon:'🛏️'},move:{label:'교통',icon:'🚗'}};
@@ -597,7 +686,7 @@ const idb={
   async del(k){const d=await this.open();return new Promise((ok,no)=>{const t=d.transaction('kv','readwrite');t.objectStore('kv').delete(k);t.oncomplete=()=>ok();t.onerror=()=>no(t.error)})}
 };
 let authDone;const authReady=new Promise(r=>authDone=r);
-let db={places:[],trips:[],home:{photo:''}}, cur=null, curTrip=null, curStop=null, activeTrip=null, section=null, saveTimer;
+let db={places:[],trips:[],home:{photo:''},wishes:[],trash:[]}, cur=null, curTrip=null, curStop=null, activeTrip=null, section=null, saveTimer;
 function setSaved(t){document.querySelectorAll('.saved').forEach(e=>e.textContent=t)}
 async function save(){
   let sc=null;
@@ -734,7 +823,8 @@ function drawMarkers(){
     MAP.drawRoute(st.map(s=>[s.lat,s.lng]));
   }else{
     MAP.drawRoute([]);
-    MAP.drawPins(db.places.map(p=>({id:p.id,lat:p.lat,lng:p.lng,icon:p.kind==='bakery'?'🥐':'☕',label:p.name})),openEdit,false);
+    MAP.drawPins(db.places.map(p=>({id:p.id,lat:p.lat,lng:p.lng,icon:p.kind==='bakery'?'🥐':'☕',label:p.name}))
+      .concat(db.wishes.filter(w=>w.lat).map(w=>({id:w.id,lat:w.lat,lng:w.lng,icon:'⭐',label:w.name}))),id=>wishId(id)?openWish(id):openEdit(id),false);
   }
 }
 function fitTrip(){
@@ -769,11 +859,13 @@ function drawHome(){
   $('homeCafeSub').textContent=db.places.length?db.places.length+'곳 방문 · '+won(cafeSum):'아직 기록이 없어요';
   const stops=db.trips.reduce((s,t)=>s+t.stops.length,0);
   $('homeTripSub').textContent=db.trips.length?db.trips.length+'개의 여행 · 장소 '+stops+'곳':'아직 여행 기록이 없어요';
+  $('homeWishSub').textContent=db.wishes.length?db.wishes.length+'곳':'가고 싶은 곳을 적어 두세요';
+  drawMemory();
   showPhoto();
 }
 function showHome(){
   cancelMode();section=null;activeTrip=null;
-  ['listScreen','editScreen','tripScreen','stopScreen','setScreen','annScreen'].forEach(i=>$(i).hidden=true);
+  ['listScreen','editScreen','tripScreen','stopScreen','setScreen','annScreen','wishScreen','wishEdit','statScreen','trashScreen'].forEach(i=>$(i).hidden=true);
   document.body.classList.remove('trip');
   drawHome();$('homeScreen').hidden=false;
 }
@@ -1157,7 +1249,7 @@ function openEdit(id,isNew){
   mountPhotos($('photos'),$('file'),()=>cur.photos);
   drawKind();drawAcid();drawTotal();
   setSaved('');$('editBody').scrollTop=0;
-  armDelete($('delBtn'),()=>{dropPhotos(cur.photos);db.places=db.places.filter(p=>p!==cur);cur=null;save();$('editScreen').hidden=true;drawMarkers();if(!$('listScreen').hidden)drawList()});
+  armDelete($('delBtn'),()=>{toTrash('place',cur);db.places=db.places.filter(p=>p!==cur);cur=null;save();$('editScreen').hidden=true;drawMarkers();if(!$('listScreen').hidden)drawList()});
   $('editScreen').hidden=false;
   if(isNew)setTimeout(()=>$('name').focus(),50);
 }
@@ -1183,7 +1275,7 @@ function openTrip(id,isNew){
   $('tHead').textContent=curTrip.title||'새 여행';
   $('tWithList').innerHTML=[...new Set(db.trips.map(t=>t.with).concat(db.places.map(p=>p.with)).filter(Boolean))].map(v=>'<option value="'+esc(v)+'">').join('');
   setSaved('');
-  armDelete($('tDel'),()=>{dropPhotos(curTrip.stops.flatMap(x=>x.photos));db.trips=db.trips.filter(t=>t!==curTrip);if(activeTrip===curTrip)activeTrip=null;curTrip=null;save();$('tripScreen').hidden=true;drawMarkers();drawList()});
+  armDelete($('tDel'),()=>{toTrash('trip',curTrip);db.trips=db.trips.filter(t=>t!==curTrip);if(activeTrip===curTrip)activeTrip=null;curTrip=null;save();$('tripScreen').hidden=true;drawMarkers();drawList()});
   $('tripScreen').hidden=false;
   if(isNew)setTimeout(()=>$('tTitle').focus(),50);
 }
@@ -1226,7 +1318,7 @@ function openStop(id,isNew){
   stars($('sStars'),()=>stop.rating,v=>stop.rating=v,$('sScore'));
   mountPhotos($('sPhotos'),$('sFile'),()=>stop.photos);
   drawStopKind();setSaved('');
-  armDelete($('sDel'),()=>{dropPhotos(stop.photos);t.stops=t.stops.filter(x=>x!==stop);curStop=null;save();$('stopScreen').hidden=true;drawMarkers();if(!$('listScreen').hidden)drawList()});
+  armDelete($('sDel'),()=>{toTrash('stop',stop,{tripId:t.id});t.stops=t.stops.filter(x=>x!==stop);curStop=null;save();$('stopScreen').hidden=true;drawMarkers();if(!$('listScreen').hidden)drawList()});
   $('sMove').onclick=()=>goMove(stop,'stopScreen',()=>openStop(stop.id),'새 위치를 지도에서 눌러 주세요');
   $('stopScreen').hidden=false;
   if(isNew)setTimeout(()=>$(stop.kind==='move'?'sFrom':'sName').focus(),50);
@@ -1248,8 +1340,15 @@ function canon(v){
   return v;
 }
 const hashOf=o=>JSON.stringify(canon(o));
+/* 가보고 싶은 곳(w…)과 휴지통(x…)은 서버 표의 종류 제한 때문에 'place' 줄로 저장하고, id 첫 글자로 구분해요 */
+const wishId=id=>/^w/.test(id),trashId=id=>/^x/.test(id);
+function arrOf(id,kind){return kind==='trip'?db.trips:wishId(id)?db.wishes:trashId(id)?db.trash:db.places}
+function normWish(w){return Object.assign({id:'w'+Date.now(),kind:'cafe',name:'',addr:'',off:'',hours:'',park:'',lat:0,lng:0,added:today()},w)}
+function normTrash(x){return Object.assign({lat:0,lng:0,name:'',tk:'place',at:new Date().toISOString(),item:{}},x)}
+function normFor(id,kind){return kind==='trip'?normTrip:wishId(id)?normWish:trashId(id)?normTrash:norm}
 function localItems(){
-  return [{id:'home',kind:'home',obj:db.home}].concat(db.places.map(o=>({id:o.id,kind:'place',obj:o})),db.trips.map(o=>({id:o.id,kind:'trip',obj:o})));
+  return [{id:'home',kind:'home',obj:db.home}].concat(db.places.map(o=>({id:o.id,kind:'place',obj:o})),db.trips.map(o=>({id:o.id,kind:'trip',obj:o})),
+    db.wishes.map(o=>({id:o.id,kind:'place',obj:o})),db.trash.map(o=>({id:o.id,kind:'place',obj:o})));
 }
 function stamp(){
   const now=new Date().toISOString();
@@ -1262,13 +1361,14 @@ function isEditing(id){
   if(!$('editScreen').hidden&&cur&&cur.id===id)return true;
   if(!$('tripScreen').hidden&&curTrip&&curTrip.id===id)return true;
   if(!$('stopScreen').hidden&&activeTrip&&activeTrip.id===id)return true;
+  if(!$('wishEdit').hidden&&curWish&&curWish.id===id)return true;
   return false;
 }
-function findLocal(id,kind){return kind==='home'?db.home:(kind==='place'?db.places:db.trips).find(x=>x.id===id)}
+function findLocal(id,kind){return kind==='home'?db.home:arrOf(id,kind).find(x=>x.id===id)}
 function replaceLocal(r){
   const o=Object.assign({},r.data);o._u=r.updated_at;
   if(r.kind==='home'){db.home=Object.assign({photo:''},o);return db.home}
-  const arr=r.kind==='place'?db.places:db.trips,n=(r.kind==='place'?norm:normTrip)(o),i=arr.findIndex(x=>x.id===r.id);
+  const arr=arrOf(r.id,r.kind),n=normFor(r.id,r.kind)(o),i=arr.findIndex(x=>x.id===r.id);
   if(i>=0)arr[i]=n;else arr.push(n);
   return n;
 }
@@ -1278,7 +1378,7 @@ function mergeRow(r){
   if(isEditing(r.id))return false;
   const loc=findLocal(r.id,r.kind);
   if(r.deleted){
-    if(loc&&r.kind!=='home'){const arr=r.kind==='place'?db.places:db.trips;arr.splice(arr.indexOf(loc),1);delete synced[r.id];delete seen[r.id];return true}
+    if(loc&&r.kind!=='home'){const arr=arrOf(r.id,r.kind);arr.splice(arr.indexOf(loc),1);delete synced[r.id];delete seen[r.id];return true}
     return false;
   }
   if(!loc){return synced[r.id]?false:adopt(r)} // 내가 지운 것이면 삭제 표시를 올리고, 아니면 새 기록으로 받음
@@ -1291,14 +1391,18 @@ function refreshUI(){
   drawMarkers();
   if(!$('listScreen').hidden)drawList();
   if(!$('homeScreen').hidden)drawHome();
+  if(!$('wishScreen').hidden)drawWishList();
+  if(!$('trashScreen').hidden)drawTrash();
 }
 async function syncPull(){
   const {data,error}=await sb.from('items').select('*');
   if(error)throw error;
   let changed=false;const ids=new Set();
   data.forEach(r=>{ids.add(r.id);if(mergeRow(r))changed=true});
+  const fixed=fixAnnis();if(fixed)changed=true;
   Object.keys(synced).forEach(id=>{if(!ids.has(id))delete synced[id]}); // 서버에 없으면 다시 올림
   if(changed){await idb.set('db',db);refreshUI()}
+  if(fixed)queueSave();
   await idb.set('synced',synced);
 }
 async function syncPush(sc0){
@@ -1340,7 +1444,7 @@ function startRealtime(){
 }
 async function startSync(){
   syncOn=true;setSync('동기화 중…');
-  try{await syncPull();await migratePhotos();await syncPush();flushUploads();startRealtime()}
+  try{await syncPull();await migratePhotos();await syncPush();flushUploads();purgeTrash();startRealtime()}
   catch(e){setSync('오프라인 · 연결되면 자동으로 올라가요');console.warn('동기화 시작 실패',e)}
 }
 function showLogin(){$('loginScreen').hidden=false;$('logoutBtn').hidden=true}
@@ -1433,6 +1537,8 @@ function drawSettings(){
   $('setPinState').textContent=on?'켜짐 · 이 폰에서만 적용돼요':'꺼짐 · 필요하면 켜 보세요';
   $('setPinOn').hidden=on;$('setPinChange').hidden=!on;$('setPinOff').hidden=!on;
   $('appVer').textContent='앱 버전 '+APP_VER;
+  $('setTrashState').textContent=db.trash.length?db.trash.length+'개 · 30일 뒤 자동으로 지워져요':'비어 있어요';
+  showPhotoUsage();
   idb.get('uploads').then(q=>{const n=(q||[]).length;$('setPhotoState').textContent=n?'서버에 올리는 중 '+n+'장 (연결되면 자동으로 올라가요)':'모두 서버에 보관 중'}).catch(()=>{});
 }
 function openSettings(){drawSettings();$('setScreen').hidden=false}
@@ -1458,7 +1564,7 @@ $('setPinOff').onclick=async()=>{
 /* 기념일 (D+) */
 const DEFAULT_ANNIS=[
   {n:'기현',d:'1987-02-09',t:'birth'},{n:'진아',d:'1986-10-01',t:'birth'},{n:'한율',d:'2015-11-20',t:'birth'},
-  {n:'이현',d:'2018-03-16',t:'birth'},{n:'서비',d:'2020-04-16',t:'birth'},{n:'구름',d:'2023-11-30',t:'anniv'},{n:'결혼',d:'2012-02-04',t:'anniv'}
+  {n:'이현',d:'2018-03-16',t:'birth'},{n:'서비',d:'2020-04-16',t:'birth'},{n:'구름',d:'2023-11-30',t:'birth'},{n:'결혼',d:'2012-02-04',t:'anniv'}
 ];
 const getAnnis=()=>Array.isArray(db.home.annis)?db.home.annis:DEFAULT_ANNIS;
 function ownAnnis(){if(!Array.isArray(db.home.annis))db.home.annis=DEFAULT_ANNIS.map(a=>Object.assign({},a));return db.home.annis}
@@ -1522,6 +1628,285 @@ $('annAdd').onclick=()=>{
   $('annName').value='';$('annDate').value='';queueSave();drawAnn();
 };
 
+/* 구름이는 강아지 생일(추정)이라 '생일'로 바꿔 줌 (예전에 저장된 기념일 목록 보정) */
+function fixAnnis(){
+  let c=false;
+  if(Array.isArray(db.home.annis))db.home.annis.forEach(a=>{if(a.n==='구름'&&a.d==='2023-11-30'&&a.t==='anniv'){a.t='birth';c=true}});
+  return c;
+}
+
+/* 휴지통: 지운 기록은 30일 동안 보관(사진도 그대로). 그 뒤 사진과 함께 완전히 삭제 */
+const TRASH_DAYS=30;
+const photoRefsOf=o=>JSON.stringify(o).match(/sb:[a-z0-9]+/g)||[];
+const TK_LABEL={place:'맛집·카페',trip:'여행',stop:'여행 장소',wish:'가보고 싶은 곳'};
+function toTrash(tk,item,extra){
+  const name=tk==='stop'?stopName(item):tk==='trip'?(item.title||'이름 없는 여행'):(item.name||'이름 없는 곳');
+  db.trash.push(normTrash(Object.assign({id:'x'+Date.now().toString(36)+Math.random().toString(36).slice(2,5),tk,name,item:JSON.parse(JSON.stringify(item))},extra)));
+}
+async function purgeTrash(){
+  const cut=Date.now()-TRASH_DAYS*864e5;
+  const old=db.trash.filter(x=>Date.parse(x.at)<cut);
+  if(!old.length)return;
+  old.forEach(x=>dropPhotos(photoRefsOf(x.item)));
+  db.trash=db.trash.filter(x=>!old.includes(x));
+  save();
+}
+function restoreTrash(x){
+  const it=JSON.parse(JSON.stringify(x.item));delete it._u;
+  const put=(arr,fn)=>{if(!arr.some(a=>a.id===it.id))arr.push(fn(it))};
+  if(x.tk==='place')put(db.places,norm);
+  else if(x.tk==='trip')put(db.trips,normTrip);
+  else if(x.tk==='wish')put(db.wishes,normWish);
+  else if(x.tk==='stop'){
+    const t=db.trips.find(t=>t.id===x.tripId);
+    if(!t)return '그 여행이 없어서 되살릴 수 없어요. 여행을 먼저 복구해 주세요.';
+    if(!t.stops.some(s=>s.id===it.id))t.stops.push(normStop(it));
+  }
+  delete seen[it.id];
+  db.trash=db.trash.filter(y=>y!==x);
+  save();refreshUI();
+  return '';
+}
+function drawTrash(){
+  const box=$('trashBody');box.innerHTML='';
+  const list=[...db.trash].sort((a,b)=>String(b.at).localeCompare(String(a.at)));
+  if(!list.length){box.innerHTML='<div class="empty">휴지통이 비어 있어요.</div>';return}
+  list.forEach(x=>{
+    const left=Math.max(0,TRASH_DAYS-Math.floor((Date.now()-Date.parse(x.at))/864e5));
+    const row=document.createElement('div');row.className='arow';
+    row.innerHTML='<div class="an"><b></b><span></span></div><button class="ibtn" type="button">복구</button><button class="ibtn danger" type="button">완전 삭제</button>';
+    row.querySelector('b').textContent=x.name||'이름 없음';
+    row.querySelector('span').textContent=TK_LABEL[x.tk]+' · '+new Date(x.at).toLocaleDateString('ko-KR')+' 삭제 · '+left+'일 뒤 사라져요';
+    const [rb,xb]=row.querySelectorAll('button');
+    rb.onclick=()=>{const m=restoreTrash(x);if(m)alert(m);else drawTrash()};
+    let armed=false,tm;
+    xb.onclick=()=>{
+      if(!armed){armed=true;xb.textContent='정말?';clearTimeout(tm);tm=setTimeout(()=>{armed=false;xb.textContent='완전 삭제'},3000);return}
+      dropPhotos(photoRefsOf(x.item));db.trash=db.trash.filter(y=>y!==x);save();drawTrash();
+    };
+    box.appendChild(row);
+  });
+}
+$('setTrash').onclick=()=>{drawTrash();$('trashScreen').hidden=false};
+$('trashBack').onclick=()=>{$('trashScreen').hidden=true;drawSettings()};
+
+/* 가보고 싶은 곳 */
+const WKIND={cafe:['카페','☕'],bakery:['빵집','🥐'],food:['식당','🍽️'],spot:['여행지','📍']};
+let curWish=null,curWishNew=false,wishChip='all',wSearchSeq=0,wSearchTimer;
+$('wKindSeg').innerHTML=Object.keys(WKIND).map(k=>'<button type="button" data-k="'+k+'">'+WKIND[k][0]+'</button>').join('');
+function drawWishList(){
+  const chips=$('wishChips');chips.innerHTML='';
+  [['all','전체']].concat(Object.keys(WKIND).map(k=>[k,WKIND[k][0]])).forEach(([k,label])=>{
+    const n=k==='all'?db.wishes.length:db.wishes.filter(w=>w.kind===k).length;
+    const b=document.createElement('button');b.type='button';b.className='chip'+(wishChip===k?' on':'');b.textContent=label+' '+n;
+    b.onclick=()=>{wishChip=k;drawWishList()};chips.appendChild(b);
+  });
+  const box=$('wishBody');box.innerHTML='';
+  const ws=db.wishes.filter(w=>wishChip==='all'||w.kind===wishChip).sort((a,b)=>String(b.added||'').localeCompare(String(a.added||''))||b.id.localeCompare(a.id));
+  if(!ws.length){box.innerHTML='<div class="empty">'+(db.wishes.length?'이 종류의 장소가 없어요.':'아직 없어요.<br>오른쪽 위의 + 추가로<br>가보고 싶은 카페나 여행지를 적어 두세요.')+'</div>';return}
+  ws.forEach(w=>{
+    const meta=[w.off?'휴무 '+w.off:'',w.hours,w.park?'주차 '+w.park:''].filter(Boolean).join(' · ');
+    box.appendChild(card(WKIND[w.kind][1],{tag:WKIND[w.kind][0],text:w.name||'이름 없는 곳'},[w.addr,meta].filter(Boolean).join('\n'),'',()=>openWish(w.id)));
+  });
+  box.querySelectorAll('.mt').forEach(e=>{e.style.whiteSpace='pre-line'});
+}
+function drawWishKind(){document.querySelectorAll('#wKindSeg button').forEach(b=>b.classList.toggle('on',b.dataset.k===curWish.kind));$('wDone').hidden=!(curWish.kind==='cafe'||curWish.kind==='bakery')}
+function touchWish(){
+  if(curWishNew){db.wishes.push(curWish);curWishNew=false}
+  queueSave();
+}
+function openWish(idOrObj,isNew){
+  if(typeof idOrObj==='string'){curWish=db.wishes.find(w=>w.id===idOrObj);curWishNew=false}
+  else{curWish=idOrObj;curWishNew=!!isNew}
+  if(!curWish)return;
+  cancelMode();
+  const w=curWish;
+  $('wName').value=w.name;$('wAddr').value=w.addr;$('wOff').value=w.off;$('wHours').value=w.hours;$('wPark').value=w.park;
+  $('wSearch').value='';$('wResults').hidden=true;
+  $('wHead').textContent=w.name||'새로 가보고 싶은 곳';
+  drawWishKind();setSaved('');
+  armDelete($('wDel'),()=>{
+    if(!curWishNew){toTrash('wish',w);db.wishes=db.wishes.filter(x=>x!==w);save()}
+    curWish=null;curWishNew=false;$('wishEdit').hidden=true;drawMarkers();drawWishList();if(!$('homeScreen').hidden)drawHome();
+  });
+  $('wishEdit').hidden=false;
+  if(curWishNew)setTimeout(()=>$('wSearch').focus(),50);
+}
+[['wName','name'],['wAddr','addr'],['wOff','off'],['wHours','hours'],['wPark','park']].forEach(([id,k])=>{
+  $(id).oninput=()=>{curWish[k]=$(id).value;touchWish();if(k==='name'){$('wHead').textContent=curWish.name||'새로 가보고 싶은 곳';drawMarkers()}}
+});
+document.querySelectorAll('#wKindSeg button').forEach(b=>b.onclick=()=>{curWish.kind=b.dataset.k;drawWishKind();touchWish();drawMarkers()});
+$('wSearch').oninput=()=>{
+  clearTimeout(wSearchTimer);const q=$('wSearch').value.trim(),box=$('wResults');
+  if(q.length<2){wSearchSeq++;box.hidden=true;return}
+  wSearchTimer=setTimeout(async()=>{
+    const my=++wSearchSeq;let items;
+    try{items=await MAP.search(q)}catch(e){if(my!==wSearchSeq)return;box.innerHTML='<div class="none">검색에 연결하지 못했어요.</div>';box.hidden=false;return}
+    if(my!==wSearchSeq)return;
+    box.innerHTML='';
+    items.forEach(it=>{
+      const b=document.createElement('button');b.type='button';b.innerHTML='<div class="rn"></div><div class="rs"></div>';
+      b.querySelector('.rn').textContent=it.name||it.addr;
+      if(tagOf(it)){const s=document.createElement('span');s.className='tag';s.textContent=tagOf(it);b.querySelector('.rn').appendChild(s)}
+      b.querySelector('.rs').textContent=it.addr;
+      b.onclick=()=>{
+        const w=curWish;w.name=it.name||w.name;w.addr=it.addr||w.addr;w.lat=it.lat;w.lng=it.lng;
+        if(it.cat)w.kind=it.cat==='lodging'?'spot':it.cat;
+        $('wName').value=w.name;$('wAddr').value=w.addr;$('wHead').textContent=w.name||'새로 가보고 싶은 곳';
+        $('wSearch').value='';box.hidden=true;drawWishKind();touchWish();drawMarkers();
+      };
+      box.appendChild(b);
+    });
+    if(!items.length)box.innerHTML='<div class="none">검색 결과가 없어요. 아래에 직접 적어도 돼요.</div>';
+    box.hidden=false;
+  },350);
+};
+$('wMap').onclick=()=>{
+  const q=[curWish.name,curWish.addr].filter(Boolean).join(' ').trim();
+  if(!q){alert('이름이나 주소를 먼저 적어 주세요.');return}
+  window.open('https://map.kakao.com/link/search/'+encodeURIComponent(q),'_blank');
+};
+$('wDone').onclick=()=>{
+  const w=curWish;if(!w||!(w.name||'').trim()){alert('이름을 먼저 적어 주세요.');return}
+  clearTimeout(saveTimer);
+  const p=newPlace(w.lat||START[0],w.lng||START[1]);
+  p.name=w.name;p.kind=w.kind==='bakery'?'bakery':'cafe';
+  p.memo=[w.addr?'주소: '+w.addr:'',w.off?'휴무일: '+w.off:'',w.hours?'영업시간: '+w.hours:'',w.park?'주차: '+w.park:''].filter(Boolean).join('\n');
+  db.places.push(p);
+  if(!curWishNew)db.wishes=db.wishes.filter(x=>x!==w);
+  curWish=null;curWishNew=false;
+  save();
+  $('wishEdit').hidden=true;$('wishScreen').hidden=true;
+  enterSection('cafe');MAP.setView(p.lat,p.lng,17);openEdit(p.id,false);
+};
+$('wBack').onclick=()=>{
+  clearTimeout(saveTimer);if(!curWishNew)save();
+  $('wishEdit').hidden=true;curWish=null;curWishNew=false;drawMarkers();
+  if(!$('wishScreen').hidden)drawWishList();
+  if(!$('homeScreen').hidden)drawHome();
+};
+$('goWish').onclick=()=>{drawWishList();$('wishScreen').hidden=false};
+$('wishBack').onclick=()=>{$('wishScreen').hidden=true;drawHome()};
+$('wishAdd').onclick=()=>openWish(normWish({id:'w'+Date.now()+Math.random().toString(36).slice(2,4),kind:'cafe'}),true);
+
+/* 지난 오늘: 몇 년 전 오늘 남긴 기록을 홈에 보여 줌 */
+function memories(){
+  const n=new Date(),y=n.getFullYear(),md=String(n.getMonth()+1).padStart(2,'0')+'-'+String(n.getDate()).padStart(2,'0');
+  const yrs=d=>{if(!d||d.slice(5)!==md)return 0;const k=y-(+d.slice(0,4));return k>0?k:0};
+  const out=[];
+  db.places.forEach(p=>{const k=yrs(p.date);if(k)out.push({k,icon:p.kind==='bakery'?'🥐':'☕',text:p.name||'이름 없는 곳',open:()=>{enterSection('cafe');openEdit(p.id)}})});
+  db.trips.forEach(t=>t.stops.forEach(s=>{const k=yrs(s.date);if(k)out.push({k,icon:KIND[s.kind].icon,text:(t.title||'여행')+' · '+stopName(s),
+    open:()=>{enterSection('trip');activeTrip=t;drawMarkers();drawList();openStop(s.id)}})}));
+  return out.sort((a,b)=>a.k-b.k).slice(0,3);
+}
+function drawMemory(){
+  const box=$('homeMemory'),list=memories();
+  if(!list.length){box.hidden=true;box.innerHTML='';return}
+  box.innerHTML='<div class="mh">📅 지난 오늘</div>';
+  list.forEach(m=>{
+    const b=document.createElement('button');b.type='button';
+    b.innerHTML='<span class="y"></span><span class="t"></span>';
+    b.querySelector('.y').textContent=m.k+'년 전';b.querySelector('.t').textContent=m.icon+' '+m.text;
+    b.onclick=m.open;box.appendChild(b);
+  });
+  box.hidden=false;
+}
+
+/* 통계 */
+let stY='all';
+function drawStats(){
+  const ps0=db.places,ts0=db.trips;
+  const years=[...new Set(ps0.map(p=>(p.date||'').slice(0,4)).concat(ts0.map(t=>(t.start||'').slice(0,4))).filter(Boolean))].sort().reverse();
+  if(stY!=='all'&&!years.includes(stY))stY='all';
+  const chips=$('stChips');chips.innerHTML='';
+  [['all','전체']].concat(years.map(y=>[y,y+'년'])).forEach(([k,label])=>{
+    const b=document.createElement('button');b.type='button';b.className='chip'+(stY===k?' on':'');b.textContent=label;
+    b.onclick=()=>{stY=k;drawStats()};chips.appendChild(b);
+  });
+  const inY=d=>stY==='all'||(d||'').startsWith(stY);
+  const ps=ps0.filter(p=>inY(p.date)),ts=ts0.filter(t=>inY(t.start));
+  const spend=ps.reduce((s,p)=>s+total(p),0),rated=ps.filter(p=>avg(p)>0);
+  const mean=rated.length?rated.reduce((s,p)=>s+avg(p),0)/rated.length:0;
+  const cafes=ps.filter(p=>p.kind!=='bakery').length,bakes=ps.length-cafes;
+  let h='<section class="sec" style="border-top:0;margin-top:0"><h2><span>맛집 · 카페</span></h2><div class="bigstat">'
+    +'<div><b>'+ps.length+'곳</b>방문 (카페 '+cafes+' · 빵집 '+bakes+')</div>'
+    +'<div><b>'+won(spend)+'</b>총 지출</div>'
+    +'<div><b>'+(mean?'★ '+mean.toFixed(1):'-')+'</b>평균 별점</div>'
+    +'<div><b>'+(ps.length?won(Math.round(spend/ps.length)):'-')+'</b>방문당 지출</div></div>';
+  // 막대: 연도 선택 시 월별, 전체일 때 연도별
+  const bars=[];
+  if(stY==='all')years.slice().reverse().forEach(y=>bars.push([y,ps0.filter(p=>(p.date||'').startsWith(y)).length]));
+  else for(let m=1;m<=12;m++)bars.push([m+'월',ps.filter(p=>(p.date||'').slice(5,7)===String(m).padStart(2,'0')).length]);
+  const mx=Math.max(1,...bars.map(b=>b[1]));
+  if(ps.length)h+='<div style="margin-top:6px"><label class="lbl">'+(stY==='all'?'연도별':'월별')+' 방문</label><div class="bars">'
+    +bars.map(([k,v])=>'<div class="brow"><span>'+esc(k)+'</span><i style="width:'+Math.round(v/mx*100)+'%"></i><b>'+v+'</b></div>').join('')+'</div></div>';
+  const top=rated.slice().sort((a,b)=>avg(b)-avg(a)).slice(0,5);
+  if(top.length)h+='<div style="margin-top:14px"><label class="lbl">별점 높은 곳</label>'+top.map(p=>'<div class="kv"><span>'+esc(p.name||'이름 없는 곳')+'</span><span>★ '+avg(p).toFixed(1)+'</span></div>').join('')+'</div>';
+  const cnt=(arr,f)=>{const m={};arr.forEach(x=>{const k=(f(x)||'').trim();if(k)m[k]=(m[k]||0)+1});return Object.entries(m).sort((a,b)=>b[1]-a[1])};
+  const often=cnt(ps,p=>p.name).filter(e=>e[1]>=2).slice(0,3);
+  if(often.length)h+='<div style="margin-top:14px"><label class="lbl">자주 간 곳</label>'+often.map(([k,v])=>'<div class="kv"><span>'+esc(k)+'</span><span>'+v+'번</span></div>').join('')+'</div>';
+  const who=cnt(ps,p=>p.with).slice(0,3);
+  if(who.length)h+='<div style="margin-top:14px"><label class="lbl">같이 많이 간 사람</label>'+who.map(([k,v])=>'<div class="kv"><span>'+esc(k)+'</span><span>'+v+'번</span></div>').join('')+'</div>';
+  if(!ps.length)h+='<div class="empty" style="padding:16px 0">이 기간의 맛집·카페 기록이 없어요.</div>';
+  h+='</section>';
+  const tspend=ts.reduce((s,t)=>s+tripTotal(t),0),spots=ts.reduce((s,t)=>s+t.stops.length,0);
+  const big=ts.slice().sort((a,b)=>tripTotal(b)-tripTotal(a))[0];
+  h+='<section class="sec"><h2><span>여행</span></h2><div class="bigstat">'
+    +'<div><b>'+ts.length+'개</b>여행</div><div><b>'+spots+'개</b>기록한 장소</div><div><b>'+won(tspend)+'</b>총 지출</div></div>';
+  if(big&&tripTotal(big)>0)h+='<div style="margin-top:10px"><label class="lbl">가장 많이 쓴 여행</label><div class="kv"><span>'+esc(big.title||'이름 없는 여행')+'</span><span>'+won(tripTotal(big))+'</span></div></div>';
+  if(!ts.length)h+='<div class="empty" style="padding:16px 0">이 기간의 여행 기록이 없어요.</div>';
+  h+='</section>';
+  $('statBody').innerHTML=h;
+}
+$('homeStat').onclick=()=>{drawStats();$('statScreen').hidden=false};
+$('statBack').onclick=()=>{$('statScreen').hidden=true};
+
+/* 사진 사용량 · 정리 */
+const fmtSize=b=>b>=1048576?(b/1048576).toFixed(1)+'MB':Math.round(b/1024)+'KB';
+async function photoFiles(){
+  const out=[];
+  for(let off=0;;off+=1000){
+    const {data,error}=await sb.storage.from(BUCKET).list('u',{limit:1000,offset:off});
+    if(error)throw error;
+    out.push(...data);if(data.length<1000)break;
+  }
+  return out.filter(f=>f.name&&/\.jpg$/.test(f.name));
+}
+async function showPhotoUsage(){
+  const el=$('setPhotoUse'),btn=$('setPhotoClean');
+  if(!sb||!sbUser){el.textContent='로그인하면 확인할 수 있어요';btn.hidden=true;return}
+  btn.hidden=false;el.textContent='계산 중…';
+  try{
+    const fs=await photoFiles();
+    const bytes=fs.reduce((s,f)=>s+((f.metadata&&f.metadata.size)||0),0);
+    const n=fs.filter(f=>!/_t\.jpg$/.test(f.name)).length;
+    el.textContent='사진 '+n+'장 · '+fmtSize(bytes)+' 사용 (무료 1GB 중 '+(bytes/1073741824*100).toFixed(1)+'%)';
+  }catch(e){el.textContent='확인하지 못했어요'}
+}
+$('setPhotoClean').onclick=async()=>{
+  const btn=$('setPhotoClean'),el=$('setPhotoUse');
+  if(!sb||!sbUser)return;
+  btn.disabled=true;
+  try{
+    el.textContent='최신 기록 확인 중…';
+    await syncPull();
+    const used=new Set(photoRefsOf([db.places,db.trips,db.home,db.wishes,db.trash]).map(s=>s.slice(3)));
+    ((await idb.get('uploads'))||[]).forEach(u=>used.add(u.id));
+    const fs=await photoFiles(),cut=Date.now()-864e5;
+    // 기록에 연결되지 않았고 하루 넘게 지난 파일만 (방금 올린 사진은 건드리지 않음)
+    const orphan=fs.filter(f=>!used.has(f.name.replace(/(_t)?\.jpg$/,''))&&Date.parse(f.created_at||'')<cut);
+    if(!orphan.length){el.textContent='정리할 사진이 없어요. 모두 기록에 연결돼 있어요.';return}
+    const bytes=orphan.reduce((s,f)=>s+((f.metadata&&f.metadata.size)||0),0);
+    if(!confirm('어디에도 쓰이지 않는 사진 파일 '+orphan.length+'개(약 '+fmtSize(bytes)+')를 지울까요?\n기록에 연결된 사진과 휴지통의 사진은 지우지 않아요.')){showPhotoUsage();return}
+    for(let i=0;i<orphan.length;i+=100){
+      const {error}=await sb.storage.from(BUCKET).remove(orphan.slice(i,i+100).map(f=>'u/'+f.name));
+      if(error)throw error;
+    }
+    await showPhotoUsage();
+  }catch(e){console.warn(e);el.textContent='정리하지 못했어요. 인터넷을 확인하고 다시 시도해 주세요'}
+  finally{btn.disabled=false}
+};
+
 /* 시작 */
 (async function(){
   let d; try{d=await idb.get('db')}catch(e){}
@@ -1531,12 +1916,14 @@ $('annAdd').onclick=()=>{
   const fresh=!d;
   if(fresh)d={places:SB_URL?[]:[norm({id:'clover',name:'클로버',lat:37.2703,lng:127.1500,date:today()})]};
   d.places=(d.places||[]).map(norm);d.trips=(d.trips||[]).map(normTrip);d.home=Object.assign({photo:''},d.home);
-  db=d;
+  d.wishes=(d.wishes||[]).map(normWish);d.trash=(d.trash||[]).map(normTrash);
+  db=d;fixAnnis();
   try{synced=(await idb.get('synced'))||{}}catch(e){}
   localItems().forEach(it=>seen[it.id]=hashOf(it.obj));
   await initMap();
   if(db.places[0])MAP.setView(db.places[0].lat,db.places[0].lng,16);
   drawHome();
+  if(!SB_URL)purgeTrash();
   initAuth();
 })();
 unlockLoop();
