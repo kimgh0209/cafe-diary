@@ -96,14 +96,14 @@ body.trip .ibtn{color:var(--trip)}
 .home .cam{flex:none;width:40px;height:40px;border-radius:50%;border:0;background:rgba(0,0,0,.35);color:#fff;display:grid;place-items:center;cursor:pointer;
   backdrop-filter:blur(6px)}
 .home .cam svg{width:20px;height:20px;stroke:#fff;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
-.home .menu{display:grid;gap:12px}
-.mbtn{display:flex;align-items:center;gap:14px;width:100%;text-align:left;border:1px solid rgba(255,255,255,.28);border-radius:16px;
-  background:rgba(30,22,18,.42);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);color:#fff;padding:10px 14px;cursor:pointer}
+.home .menu{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.mbtn{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;width:100%;text-align:center;border:1px solid rgba(255,255,255,.28);border-radius:16px;
+  background:rgba(30,22,18,.42);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);color:#fff;padding:10px 4px 8px;cursor:pointer;min-width:0}
 .mbtn .ic{flex:none;width:40px;height:40px;border-radius:12px;display:grid;place-items:center;background:var(--accent)}
 .mbtn.trip .ic{background:var(--trip)}
 .mbtn .ic svg{width:23px;height:23px;stroke:#fff;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
-.mbtn .t{font-size:17px;font-weight:600}
-.mbtn .s{font-size:13px;opacity:.85}
+.mbtn .t{font-size:14px;font-weight:600;line-height:1.25}
+.mbtn .s{font-size:12px;opacity:.85}
 .mbtn:hover{background:rgba(30,22,18,.55)}
 .home.light{color:#3b2a20}
 .home.light h1,.home.light .date,.home.light .outlink{color:#3b2a20;text-shadow:none}
@@ -289,14 +289,12 @@ body.trip .chip.on{background:var(--trip);border-color:var(--trip)}
 
 /* 가보고 싶은 곳 · 지난 오늘 · 통계 · 휴지통 */
 .mbtn.wish .ic{background:#c9708f}
-.home .memory{display:grid;gap:4px;border:1px solid rgba(255,255,255,.28);border-radius:16px;background:rgba(30,22,18,.42);
-  backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);color:#fff;padding:10px 14px}
+.home .memory{margin-top:8px;margin-right:6px;border:0;border-radius:999px;padding:4px 12px;font:inherit;font-size:12px;cursor:pointer;color:#fff;background:rgba(0,0,0,.32);
+  backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);display:inline-flex;gap:6px;align-items:baseline;max-width:100%;transition:opacity .25s}
 .home .memory[hidden]{display:none}
-.home .memory .mh{font-size:12px;opacity:.85}
-.home .memory button{border:0;background:none;color:inherit;text-align:left;padding:3px 0;font-size:15px;cursor:pointer;display:flex;gap:8px;align-items:baseline;min-width:0}
-.home .memory button span.y{flex:none;font-size:12px;opacity:.85}
-.home .memory button span.t{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.home.light .memory{background:rgba(255,255,255,.58);border-color:rgba(60,40,30,.14);color:#3b2a20}
+.home .memory.fade{opacity:0}
+.home .memory .t{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:210px}
+.home.light .memory{background:rgba(255,255,255,.55);color:#3b2a20}
 .bars{display:grid;gap:6px}
 .brow{display:grid;grid-template-columns:48px 1fr 34px;gap:8px;align-items:center;font-size:13px;color:var(--muted)}
 .brow i{display:block;height:10px;border-radius:999px;background:var(--accent);min-width:2px}
@@ -475,7 +473,8 @@ body.trip .chip.on{background:var(--trip);border-color:var(--trip)}
   <div class="inner">
     <div class="top">
       <div><h1>우리가족기록♡</h1><div class="date" id="homeDate"></div>
-        <button class="dd" id="ddPill" type="button" hidden aria-label="기념일 보기"><span id="ddName"></span><b id="ddVal"></b></button></div>
+        <button class="dd" id="ddPill" type="button" hidden aria-label="기념일 보기"><span id="ddName"></span><b id="ddVal"></b></button>
+        <button class="memory" id="homeMemory" type="button" hidden><span>📅</span><span class="y"></span><span class="t"></span></button></div>
       <div class="btns">
         <button class="cam" id="homeStat" type="button" aria-label="통계">
           <svg viewBox="0 0 24 24"><path d="M5 20V11M12 20V4M19 20v-6"/></svg></button>
@@ -496,7 +495,7 @@ body.trip .chip.on{background:var(--trip);border-color:var(--trip)}
         <span class="ic"><svg viewBox="0 0 24 24"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.5A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/></svg></span>
         <span><div class="t">가보고 싶은 곳</div><div class="s" id="homeWishSub"></div></span></button>
     </div>
-    <div class="memory" id="homeMemory" hidden></div>
+
   </div>
 </div>
 
@@ -650,7 +649,7 @@ body.trip .chip.on{background:var(--trip);border-color:var(--trip)}
 </div></nav>
 
 <script>
-const APP_VER='12';
+const APP_VER='13';
 const $=id=>document.getElementById(id);
 const ACID=[['매우 낮음','쌉쌀하고 묵직한 맛'],['낮음','고소하고 부드러운 맛'],['중간','균형 잡힌 산미'],['높음','과일처럼 상큼한 산미'],['매우 높음','레몬처럼 날카로운 산미']];
 const KIND={spot:{label:'명소',icon:'📍'},food:{label:'식당',icon:'🍽️'},cafe:{label:'카페',icon:'☕'},bakery:{label:'빵집',icon:'🥐'},lodging:{label:'숙소',icon:'🛏️'},move:{label:'교통',icon:'🚗'}};
@@ -856,10 +855,10 @@ function drawHome(){
   $('homeDate').textContent=d.getFullYear()+'년 '+(d.getMonth()+1)+'월 '+d.getDate()+'일 '+DOW[d.getDay()]+'요일';
   drawPill();
   const cafeSum=db.places.reduce((s,p)=>s+total(p),0);
-  $('homeCafeSub').textContent=db.places.length?db.places.length+'곳 방문 · '+won(cafeSum):'아직 기록이 없어요';
+  $('homeCafeSub').textContent=db.places.length+'곳';
   const stops=db.trips.reduce((s,t)=>s+t.stops.length,0);
-  $('homeTripSub').textContent=db.trips.length?db.trips.length+'개의 여행 · 장소 '+stops+'곳':'아직 여행 기록이 없어요';
-  $('homeWishSub').textContent=db.wishes.length?db.wishes.length+'곳':'가고 싶은 곳을 적어 두세요';
+  $('homeTripSub').textContent=db.trips.length+'개';
+  $('homeWishSub').textContent=db.wishes.length+'곳';
   drawMemory();
   showPhoto();
 }
@@ -1799,17 +1798,18 @@ function memories(){
     open:()=>{enterSection('trip');activeTrip=t;drawMarkers();drawList();openStop(s.id)}})}));
   return out.sort((a,b)=>a.k-b.k).slice(0,3);
 }
+let memTimer=null;
 function drawMemory(){
-  const box=$('homeMemory'),list=memories();
-  if(!list.length){box.hidden=true;box.innerHTML='';return}
-  box.innerHTML='<div class="mh">📅 지난 오늘</div>';
-  list.forEach(m=>{
-    const b=document.createElement('button');b.type='button';
-    b.innerHTML='<span class="y"></span><span class="t"></span>';
-    b.querySelector('.y').textContent=m.k+'년 전';b.querySelector('.t').textContent=m.icon+' '+m.text;
-    b.onclick=m.open;box.appendChild(b);
-  });
-  box.hidden=false;
+  clearInterval(memTimer);
+  const pill=$('homeMemory'),list=memories();
+  if(!list.length){pill.hidden=true;return}
+  let i=0;
+  const show=()=>{const m=list[i];pill.querySelector('.y').textContent=m.k+'년 전';pill.querySelector('.t').textContent=m.icon+' '+m.text;pill.onclick=m.open};
+  show();pill.hidden=false;
+  if(list.length>1)memTimer=setInterval(()=>{
+    pill.classList.add('fade');
+    setTimeout(()=>{i=(i+1)%list.length;show();pill.classList.remove('fade')},260);
+  },4500);
 }
 
 /* 통계 */
