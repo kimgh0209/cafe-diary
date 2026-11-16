@@ -207,6 +207,7 @@ textarea{resize:vertical;min-height:64px}
 .seg{display:inline-flex;border:1px solid var(--line);border-radius:999px;overflow:hidden;flex-wrap:wrap}
 .seg button{background:var(--bg);border:0;padding:6px 14px;cursor:pointer;font-size:14px}
 .seg button.on{background:var(--accent);color:#fff}
+.tseg{display:flex;width:100%}.tseg button{flex:1;padding:12px 8px;font-size:16px}
 body.trip .seg button.on{background:var(--trip)}
 section.sec{border-top:1px solid var(--line);padding:16px 0;display:grid;gap:12px;margin-top:16px}
 section.sec h2{margin:0;font-size:16px;display:flex;justify-content:space-between;align-items:baseline}
@@ -488,18 +489,8 @@ body.trip .chip.on{background:var(--trip);border-color:var(--trip)}
 
       <section class="sec">
         <h2><span>커피</span></h2>
-        <div class="acid">
-          <label class="lbl" for="nutty">고소한 맛</label>
-          <input type="range" id="nutty" min="1" max="5" step="1">
-          <div class="ends"><span>약해요</span><span>진해요</span></div>
-          <div class="now" id="nuttyNow"></div>
-        </div>
-        <div class="acid">
-          <label class="lbl" for="sour">신맛</label>
-          <input type="range" id="sour" min="1" max="5" step="1">
-          <div class="ends"><span>약해요</span><span>진해요</span></div>
-          <div class="now" id="sourNow"></div>
-        </div>
+        <div><label class="lbl">커피 맛</label>
+          <div class="seg tseg" id="tasteSeg"><button type="button" data-k="nutty">🌰 고소한 맛</button><button type="button" data-k="sour">🍋 신맛</button></div></div>
         <div><label class="lbl" for="coffeeMenu">마신 메뉴</label><input type="text" id="coffeeMenu" placeholder="예: 핸드드립 에티오피아"></div>
         <div><label class="lbl" for="coffeePrice">커피 금액</label>
           <div class="price"><input type="number" id="coffeePrice" inputmode="numeric" min="0" step="100" placeholder="0"><span>원</span></div></div>
@@ -931,7 +922,7 @@ body.trip .chip.on{background:var(--trip);border-color:var(--trip)}
 </div></nav>
 
 <script>
-const APP_VER='28';
+const APP_VER='29';
 const $=id=>document.getElementById(id);
 const ACID=[['매우 낮음','쌉쌀하고 묵직한 맛'],['낮음','고소하고 부드러운 맛'],['중간','균형 잡힌 산미'],['높음','과일처럼 상큼한 산미'],['매우 높음','레몬처럼 날카로운 산미']];
 const KIND={spot:{label:'명소',icon:'📍'},food:{label:'식당',icon:'🍽️'},cafe:{label:'카페',icon:'☕'},bakery:{label:'빵집',icon:'🥐'},lodging:{label:'숙소',icon:'🛏️'},move:{label:'교통',icon:'🚗'}};
@@ -1502,13 +1493,13 @@ function armDelete(btn,fn){
 }
 
 /* 맛집·카페 기록 화면 */
-const TASTE_LV=['거의 없어요','약해요','보통','진해요','아주 진해요'];
-function drawAcid(){
-  // 예전 기록은 '산도' 한 칸만 있어서, 새 칸이 비어 있으면 거기서 짐작해 보여 줌(저장은 슬라이더를 움직일 때만)
-  const a=cur.coffee.acidity||3,dflt={nutty:6-a,sour:a};
-  [['nutty','nuttyNow'],['sour','sourNow']].forEach(([k,n])=>{const v=cur.coffee[k]||dflt[k];$(k).value=v;$(n).innerHTML='<b>'+TASTE_LV[v-1]+'</b>'});
+function tasteOf(c){ // 고르지 않은 예전 기록은 예전 '산도'(또는 v26 슬라이더 값)로 짐작해서 보여 줌(저장은 눌렀을 때만)
+  if(c.taste!==undefined)return c.taste;
+  if(c.sour||c.nutty)return (c.sour||0)>(c.nutty||0)?'sour':(c.nutty||0)>(c.sour||0)?'nutty':'';
+  return c.acidity>=4?'sour':c.acidity&&c.acidity<=2?'nutty':'';
 }
-['nutty','sour'].forEach(k=>$(k).oninput=e=>{cur.coffee[k]=+e.target.value;drawAcid();queueSave()});
+function drawAcid(){const t=tasteOf(cur.coffee);document.querySelectorAll('#tasteSeg button').forEach(b=>b.classList.toggle('on',b.dataset.k===t))}
+document.querySelectorAll('#tasteSeg button').forEach(b=>b.onclick=()=>{cur.coffee.taste=tasteOf(cur.coffee)===b.dataset.k?'':b.dataset.k;drawAcid();queueSave()});
 function drawTotal(){$('totalPrice').textContent=won(total(cur))}
 function drawKind(){document.querySelectorAll('#kindSeg button').forEach(b=>b.classList.toggle('on',b.dataset.k===cur.kind))}
 document.querySelectorAll('#kindSeg button').forEach(b=>b.onclick=()=>{cur.kind=b.dataset.k;drawKind();drawMarkers();queueSave()});
