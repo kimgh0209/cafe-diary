@@ -148,6 +148,29 @@ body.trip .ibtn{color:var(--trip)}
 .shopitem .dd{flex:none;font-size:11px;color:var(--muted)}
 .shophd{display:flex;align-items:center;justify-content:space-between;margin:18px 0 2px;font-size:13px;color:var(--muted)}
 .shophd:first-child{margin-top:0}
+.dpadd[hidden],.shoptop[hidden],.scroll[hidden]{display:none}
+.plannav{display:flex;align-items:center;justify-content:center;gap:6px;margin-bottom:10px}
+.plannav b{font-size:15px;min-width:0}
+.plannav .ibtn{font-size:20px;padding:4px 10px}
+.daycard{background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:8px 10px;margin-bottom:8px}
+.daycard.today{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent) inset}
+.dayhd{font-size:13px;font-weight:600;color:var(--muted);margin-bottom:4px}
+.daycard.today .dayhd{color:var(--accent)}
+.mealrow{display:flex;align-items:center;gap:8px;width:100%;text-align:left;border:0;background:none;padding:8px 2px;border-top:1px solid var(--line);font:inherit;color:var(--fg);cursor:pointer}
+.mealrow:first-of-type{border-top:0}
+.mealrow .ms{flex:none;font-size:13px;color:var(--muted);min-width:52px}
+.mealrow .mn{flex:1;min-width:0;font-size:16px;font-weight:600;word-break:keep-all}
+.mealrow em{flex:none;font-style:normal;font-size:11px;color:var(--muted)}
+.mealrow em.need{color:#c9771a;font-weight:600}.mealrow em.ok{color:#4a8a3d}
+.addrow{display:flex;gap:6px;flex-wrap:wrap;padding-top:4px}
+.addrow .chip{font-size:13px}
+.plansum{margin-top:12px;padding:12px;border-radius:12px;background:var(--accent-soft);color:var(--fg);font-size:14px;display:grid;gap:8px;justify-items:start}
+.havebtn{flex:none;border:1px solid var(--line);background:var(--bg);border-radius:999px;padding:4px 10px;font-size:12px;cursor:pointer;color:var(--fg)}
+.havebtn.on{background:var(--accent-soft);border-color:var(--accent)}
+.shopitem.ing.st1 .tx{color:var(--muted)}
+.shopitem.ing.st2 .tx{color:var(--muted);text-decoration:line-through}
+.shopitem.ing.st1 .ck{font-size:13px}
+.shopitem.ing.st2 .ck{background:#5b9a4d;border-color:#5b9a4d}
 .shophd.day{cursor:pointer;padding:6px 0}
 .shophd.sub.day{margin-top:6px}
 .shophd.sub{margin:12px 0 0;font-weight:600;color:var(--fg);font-size:13px}
@@ -619,7 +642,7 @@ body.trip .chip.on{background:var(--trip);border-color:var(--trip)}
         <span><div class="t">일정</div><div class="s" id="homeDiarySub"></div></span></button>
       <button class="mbtn shop" id="goShop" type="button">
         <span class="ic"><svg viewBox="0 0 24 24"><path d="M3 9h18l-2 10H5z"/><path d="M8 9l3-5M16 9l-3-5"/></svg></span>
-        <span><div class="t">장보기</div><div class="s" id="homeShopSub"></div></span></button>
+        <span><div class="t">식단·장보기</div><div class="s" id="homeShopSub"></div></span></button>
       <button class="mbtn grow" id="goGrowth" type="button">
         <span class="ic"><svg viewBox="0 0 24 24"><path d="M12 21v-9"/><path d="M12 13c0-4 3-6 7-6 0 4-3 6-7 6z"/><path d="M12 16c0-3-2-5-6-5 0 3 2 5 6 5z"/></svg></span>
         <span><div class="t">성장</div><div class="s" id="homeGrowthSub"></div></span></button>
@@ -745,13 +768,15 @@ body.trip .chip.on{background:var(--trip);border-color:var(--trip)}
 <!-- 장볼 목록 -->
 <div class="screen editor over" id="shopScreen" hidden>
   <div class="page">
-    <div class="bar"><button class="ibtn" id="shopBack" type="button">← 닫기</button><h1>장볼 목록</h1></div>
-    <div class="shoptop">
+    <div class="bar"><button class="ibtn" id="shopBack" type="button">← 닫기</button><h1 id="shopTitle">일주일 식단표</h1></div>
+    <div class="filters"><div class="chips" id="shopTabs"><button type="button" class="chip" data-t="plan">📅 식단표</button><button type="button" class="chip" data-t="shop">🛒 장보기</button></div></div>
+    <div class="scroll" id="planBody"></div>
+    <div class="shoptop" id="shopTopBox">
       <div class="dt" id="shopDate"></div>
       <div class="sr"><label for="shopStore">장본 곳</label><select id="shopStore"></select><input type="text" id="shopStoreOther" placeholder="가게 이름" maxlength="20" autocomplete="off" hidden></div>
     </div>
     <div class="scroll" id="shopBody"></div>
-    <div class="dpadd">
+    <div class="dpadd" id="shopDp">
       <select id="shopCat" aria-label="물품 종류"></select>
       <input type="text" id="shopAdd" placeholder="살 것, 살 것…" maxlength="100" autocomplete="off" aria-label="살 것 적기">
       <button class="btn on" id="shopAddBtn" type="button">추가</button>
@@ -768,6 +793,22 @@ body.trip .chip.on{background:var(--trip);border-color:var(--trip)}
     <div class="grform">
       <div class="r"><label for="grDate">측정일</label><input type="date" id="grDate"></div>
       <div class="r"><input type="number" id="grH" inputmode="decimal" step="0.1" min="30" max="220" placeholder="키 cm" aria-label="키 cm"><input type="number" id="grW" inputmode="decimal" step="0.1" min="2" max="150" placeholder="몸무게 kg" aria-label="몸무게 kg"><button class="btn on" id="grAdd" type="button">추가</button></div>
+    </div>
+  </div>
+</div>
+
+<!-- 한 끼 식단 고치기 -->
+<div class="screen editor over" id="mealScreen" hidden>
+  <div class="page">
+    <div class="bar"><button class="ibtn" id="mealBack" type="button">← 닫기</button><h1 id="mealHead">식단</h1><button class="ibtn danger" id="mealDel" type="button">삭제</button></div>
+    <div class="scroll">
+      <div style="margin-bottom:14px"><label class="lbl" for="mealName">메뉴</label><input type="text" id="mealName" placeholder="예: 닭한마리칼국수" maxlength="60" autocomplete="off"></div>
+      <section class="sec"><h2><span id="mealIngHd">재료</span></h2><div id="mealIng"></div></section>
+      <div class="hint" style="color:var(--muted);font-size:12px;margin-top:10px">🏠는 집에 있는 재료예요. 누르면 장보기에서 빠져요. 동그라미는 샀을 때 눌러요.</div>
+    </div>
+    <div class="dpadd">
+      <input type="text" id="mealIngAdd" placeholder="재료 (쉼표로 여러 개)" maxlength="100" autocomplete="off" aria-label="재료 적기">
+      <button class="btn on" id="mealIngAddBtn" type="button">추가</button>
     </div>
   </div>
 </div>
@@ -922,7 +963,7 @@ body.trip .chip.on{background:var(--trip);border-color:var(--trip)}
 </div></nav>
 
 <script>
-const APP_VER='29';
+const APP_VER='30';
 const $=id=>document.getElementById(id);
 const ACID=[['매우 낮음','쌉쌀하고 묵직한 맛'],['낮음','고소하고 부드러운 맛'],['중간','균형 잡힌 산미'],['높음','과일처럼 상큼한 산미'],['매우 높음','레몬처럼 날카로운 산미']];
 const KIND={spot:{label:'명소',icon:'📍'},food:{label:'식당',icon:'🍽️'},cafe:{label:'카페',icon:'☕'},bakery:{label:'빵집',icon:'🥐'},lodging:{label:'숙소',icon:'🛏️'},move:{label:'교통',icon:'🚗'}};
@@ -958,7 +999,7 @@ const idb={
   async del(k){const d=await this.open();return new Promise((ok,no)=>{const t=d.transaction('kv','readwrite');t.objectStore('kv').delete(k);t.oncomplete=()=>ok();t.onerror=()=>no(t.error)})}
 };
 let authDone;const authReady=new Promise(r=>authDone=r);
-let db={places:[],trips:[],home:{photo:''},wishes:[],trash:[],diary:[],shop:[],kids:[]}, cur=null, curTrip=null, curStop=null, activeTrip=null, section=null, saveTimer;
+let db={places:[],trips:[],home:{photo:''},wishes:[],trash:[],diary:[],shop:[],kids:[],meals:[]}, cur=null, curTrip=null, curStop=null, activeTrip=null, section=null, saveTimer;
 function setSaved(t){document.querySelectorAll('.saved').forEach(e=>e.textContent=t)}
 async function save(){
   let sc=null;
@@ -1133,13 +1174,13 @@ function drawHome(){
   $('homeTripSub').textContent=db.trips.length+'개';
   $('homeWishSub').textContent=db.wishes.length+'곳';
   { const r=monthRow(ymOfNow()); $('homeDiarySub').textContent=(r?r.ev.length:0)+'개'; }
-  { const n=db.shop.filter(s=>!s.done).length; $('homeShopSub').textContent=n+'개'; $('homeGrowthSub').textContent=db.kids.length+'번' }
+  { const n=db.shop.filter(s=>!s.done).length; $('homeShopSub').textContent=(n+planNeeds().reduce((a,x)=>a+x.items.length,0))+'개'; $('homeGrowthSub').textContent=db.kids.length+'번' }
   drawMemory();
   showPhoto();
 }
 function showHome(){
   cancelMode();section=null;activeTrip=null;
-  ['listScreen','editScreen','tripScreen','stopScreen','setScreen','annScreen','wishScreen','wishEdit','statScreen','trashScreen','diaryScreen','dayScreen','foodScreen','cycleScreen','shopScreen','growthScreen'].forEach(i=>$(i).hidden=true);
+  ['listScreen','editScreen','tripScreen','stopScreen','setScreen','annScreen','wishScreen','wishEdit','statScreen','trashScreen','diaryScreen','dayScreen','foodScreen','cycleScreen','shopScreen','growthScreen','mealScreen'].forEach(i=>$(i).hidden=true);
   document.body.classList.remove('trip');
   drawHome();$('homeScreen').hidden=false;
 }
@@ -1618,17 +1659,18 @@ function canon(v){
 }
 const hashOf=o=>JSON.stringify(canon(o));
 /* 가보고 싶은 곳(w…)과 휴지통(x…)은 서버 표의 종류 제한 때문에 'place' 줄로 저장하고, id 첫 글자로 구분해요 */
-const wishId=id=>/^w/.test(id),trashId=id=>/^x/.test(id),diaryId=id=>/^m\d/.test(id),shopId=id=>/^g/.test(id),kidId=id=>/^k/.test(id);
-function arrOf(id,kind){return kind==='trip'?db.trips:wishId(id)?db.wishes:trashId(id)?db.trash:diaryId(id)?db.diary:shopId(id)?db.shop:kidId(id)?db.kids:db.places}
+const wishId=id=>/^w/.test(id),trashId=id=>/^x/.test(id),diaryId=id=>/^m\d/.test(id),shopId=id=>/^g/.test(id),kidId=id=>/^k/.test(id),mealId=id=>/^f\d{8}[bld]$/.test(id);
+function arrOf(id,kind){return kind==='trip'?db.trips:wishId(id)?db.wishes:trashId(id)?db.trash:diaryId(id)?db.diary:shopId(id)?db.shop:kidId(id)?db.kids:mealId(id)?db.meals:db.places}
 function normKid(r){return Object.assign({id:'k'+Date.now().toString(36),who:'',d:'',h:null,w:null,by:'',at:new Date().toISOString()},r)}
+function normMeal(m){m=Object.assign({id:'',d:'',s:'d',name:'',ing:[],by:'',at:new Date().toISOString()},m);m.ing=(m.ing||[]).filter(i=>i&&i.n).map(i=>({n:String(i.n),st:+i.st||0}));return m}
 function normShop(s){return Object.assign({id:'g'+Date.now().toString(36),x:'',done:false,by:'',at:new Date().toISOString()},s)}
 function normWish(w){return Object.assign({id:'w'+Date.now(),kind:'cafe',name:'',addr:'',off:'',hours:'',park:'',lat:0,lng:0,added:today()},w)}
 function normTrash(x){return Object.assign({lat:0,lng:0,name:'',tk:'place',at:new Date().toISOString(),item:{}},x)}
 function normDiary(r){r=Object.assign({ym:'',ev:[],lat:0,lng:0},r);r.ym=r.ym||String(r.id).slice(1);r.ev=(r.ev||[]).filter(Boolean);return r}
-function normFor(id,kind){return kind==='trip'?normTrip:wishId(id)?normWish:trashId(id)?normTrash:diaryId(id)?normDiary:shopId(id)?normShop:kidId(id)?normKid:norm}
+function normFor(id,kind){return kind==='trip'?normTrip:wishId(id)?normWish:trashId(id)?normTrash:diaryId(id)?normDiary:shopId(id)?normShop:kidId(id)?normKid:mealId(id)?normMeal:norm}
 function localItems(){
   return [{id:'home',kind:'home',obj:db.home}].concat(db.places.map(o=>({id:o.id,kind:'place',obj:o})),db.trips.map(o=>({id:o.id,kind:'trip',obj:o})),
-    db.wishes.map(o=>({id:o.id,kind:'place',obj:o})),db.trash.map(o=>({id:o.id,kind:'place',obj:o})),db.diary.map(o=>({id:o.id,kind:'place',obj:o})),db.shop.map(o=>({id:o.id,kind:'place',obj:o})),db.kids.map(o=>({id:o.id,kind:'place',obj:o})));
+    db.wishes.map(o=>({id:o.id,kind:'place',obj:o})),db.trash.map(o=>({id:o.id,kind:'place',obj:o})),db.diary.map(o=>({id:o.id,kind:'place',obj:o})),db.shop.map(o=>({id:o.id,kind:'place',obj:o})),db.kids.map(o=>({id:o.id,kind:'place',obj:o})),db.meals.map(o=>({id:o.id,kind:'place',obj:o})));
 }
 function stamp(){
   const now=new Date().toISOString();
@@ -1642,6 +1684,7 @@ function isEditing(id){
   if(!$('tripScreen').hidden&&curTrip&&curTrip.id===id)return true;
   if(!$('stopScreen').hidden&&activeTrip&&activeTrip.id===id)return true;
   if(!$('wishEdit').hidden&&curWish&&curWish.id===id)return true;
+  if(!$('mealScreen').hidden&&curMeal&&curMeal.id===id)return true;
   if(!$('dayScreen').hidden&&daySel&&id==='m'+daySel.slice(0,7))return true;
   return false;
 }
@@ -1677,6 +1720,7 @@ function refreshUI(){
   if(!$('diaryScreen').hidden)drawDiary();
   if(!$('shopScreen').hidden)drawShop();
   if(!$('growthScreen').hidden)drawGrowth();
+  if(!$('shopScreen').hidden&&$('mealScreen').hidden)shopTab==='plan'?drawPlan():drawShop();
 }
 async function syncPull(){
   const {data,error}=await sb.from('items').select('*');
@@ -2838,7 +2882,7 @@ function drawShop(){
   const box=$('shopBody');box.innerHTML='';
   const by=(a,b)=>String(a.at).localeCompare(String(b.at))||a.id.localeCompare(b.id);
   const todo=db.shop.filter(s=>!s.done).sort(by),done=db.shop.filter(s=>s.done);
-  if(!db.shop.length){box.innerHTML='<div class="empty">아직 없어요.<br>아래에서 종류를 고르고<br>살 것을 적어 보세요.<br>쉼표로 나누면 여러 개를 한 번에 적어요.</div>';return}
+  if(!db.shop.length&&!planNeeds().length){box.innerHTML='<div class="empty">아직 없어요.<br>아래에서 종류를 고르고<br>살 것을 적어 보세요.<br>쉼표로 나누면 여러 개를 한 번에 적어요.</div>';return}
   const hd=(html,cls)=>{const h=document.createElement('div');h.className='shophd'+(cls?' '+cls:'');h.innerHTML=html;return h};
   const row=(s,showStore)=>{
     const d=document.createElement('div');d.className='shopitem'+(s.done?' done':'');d.dataset.i=s.id;
@@ -2859,7 +2903,7 @@ function drawShop(){
       box.appendChild(hd('<span>'+label+' '+g.length+'</span>','sub'));
       g.forEach(s=>box.appendChild(row(s)));
     });
-  }else box.appendChild(hd('다 샀어요! 🎉'));
+  }else if(db.shop.length)box.appendChild(hd('적어 둔 것은 다 샀어요! 🎉'));
   const dayOf=s=>s.bd||shDay(s.at),td=today();
   const doneToday=done.filter(s=>dayOf(s)>=td),past=done.filter(s=>dayOf(s)<td);
   if(doneToday.length){
@@ -2888,6 +2932,7 @@ function drawShop(){
       }
     });
   }
+  drawPlanNeeds(box,hd);
 }
 function shopAddNow(){
   const raw=$('shopAdd').value;
@@ -2934,7 +2979,7 @@ $('shopBody').onclick=e=>{
   }
   else if(t.dataset.a==='rm'){db.shop=db.shop.filter(s=>s!==it);save();drawShop()}
 };
-$('goShop').onclick=()=>{drawShop();$('shopScreen').hidden=false};
+$('goShop').onclick=()=>{setShopTab(shopTab);$('shopScreen').hidden=false};
 $('shopBack').onclick=()=>{$('shopScreen').hidden=true;drawHome()};
 
 /* 아이 성장 기록: 기록 하나가 서버 'place' 줄 하나(id 첫 글자 k). {id,who,d(측정일),h(키 cm),w(몸무게 kg),by,at} */
@@ -3051,6 +3096,156 @@ $('grBody').onclick=e=>{
 $('goGrowth').onclick=()=>{$('grDate').value=today();drawGrowth();$('growthScreen').hidden=false};
 $('grBack').onclick=()=>{$('growthScreen').hidden=true;drawHome()};
 
+/* 식단표: 한 끼가 서버 'place' 줄 하나(id 'f'+날짜8자리+칸: b 아침/l 점심/d 저녁).
+   {id,d,s,name,ing:[{n,st}],by,at}  st: 0 사야 함 · 1 집에 있어요 · 2 샀어요 */
+const SLOTS=[['b','아침','🌅'],['l','점심','☀️'],['d','저녁','🌙']];
+const mealIdOf=(d,s)=>'f'+d.replace(/-/g,'')+s;
+const slotName=s=>(SLOTS.find(x=>x[0]===s)||SLOTS[2])[1];
+const mondayOf=d=>{const t=new Date(+d.slice(0,4),+d.slice(5,7)-1,+d.slice(8,10));return dAdd(d,-((t.getDay()+6)%7))};
+const mdwOf=d=>(+d.slice(5,7))+'/'+(+d.slice(8,10))+' ('+DOW[new Date(+d.slice(0,4),+d.slice(5,7)-1,+d.slice(8,10)).getDay()]+')';
+let planMon=mondayOf(today()),shopTab='plan',curMeal=null,curMealNew=false;
+const mealHas=m=>!!(m&&((m.name||'').trim()||m.ing.length));
+const needOf=m=>m.ing.filter(i=>i.st===0).length;
+function setShopTab(t){
+  shopTab=t;
+  document.querySelectorAll('#shopTabs button').forEach(b=>b.classList.toggle('on',b.dataset.t===t));
+  const plan=t==='plan';
+  $('planBody').hidden=!plan;$('shopTopBox').hidden=plan;$('shopBody').hidden=plan;$('shopDp').hidden=plan;
+  $('shopTitle').textContent=plan?'일주일 식단표':'장볼 목록';
+  if(plan)drawPlan();else drawShop();
+}
+function drawPlan(){
+  const box=$('planBody');box.innerHTML='';
+  const td=today(),end=dAdd(planMon,6);
+  const nav=document.createElement('div');nav.className='plannav';
+  nav.innerHTML='<button type="button" class="ibtn" data-a="pw" data-n="-7" aria-label="지난주">‹</button><b>'+mdwOf(planMon)+' ~ '+mdwOf(end)+'</b><button type="button" class="ibtn" data-a="pw" data-n="7" aria-label="다음주">›</button>'
+    +(planMon!==mondayOf(td)?'<button type="button" class="ibtn" data-a="pw" data-n="0">이번 주</button>':'');
+  box.appendChild(nav);
+  let need=0;
+  for(let i=0;i<7;i++){
+    const d=dAdd(planMon,i),card=document.createElement('section');card.className='daycard'+(d===td?' today':'');
+    const h=document.createElement('div');h.className='dayhd';h.textContent=mdwOf(d)+(d===td?' · 오늘':'');card.appendChild(h);
+    const empty=[];
+    SLOTS.forEach(([s,label,ic])=>{
+      const m=db.meals.find(x=>x.id===mealIdOf(d,s));
+      if(!mealHas(m)){empty.push([s,label]);return}
+      const n=needOf(m);if(d>=td)need+=n;
+      const b=document.createElement('button');b.type='button';b.className='mealrow';b.dataset.a='meal';b.dataset.d=d;b.dataset.s=s;
+      const tag=m.ing.length?(n?'<em class="need">살 것 '+n+'</em>':'<em class="ok">재료 준비 ✅</em>'):'<em>재료 없음</em>';
+      b.innerHTML='<span class="ms">'+ic+' '+label+'</span><span class="mn"></span>'+tag;
+      b.querySelector('.mn').textContent=m.name||'(메뉴 이름 없음)';
+      card.appendChild(b);
+    });
+    if(empty.length){
+      const r=document.createElement('div');r.className='addrow';
+      empty.forEach(([s,label])=>{const b=document.createElement('button');b.type='button';b.className='chip';b.dataset.a='meal';b.dataset.d=d;b.dataset.s=s;b.textContent='+ '+label;r.appendChild(b)});
+      card.appendChild(r);
+    }
+    box.appendChild(card);
+  }
+  const sum=document.createElement('div');sum.className='plansum';
+  sum.innerHTML=need?'🛒 오늘부터 사야 할 식단 재료 <b>'+need+'개</b> <button type="button" class="btn on" data-a="toshop">장보기에서 보기</button>':'사야 할 식단 재료가 없어요. 메뉴를 적고 재료를 넣으면 여기에 모여요.';
+  box.appendChild(sum);
+}
+// 장보기 화면 아래쪽에 식단 재료(아직 안 산 것, 집에 있는 것은 빠짐)를 끼워 넣음
+function planNeeds(){
+  const td=today(),out=[];
+  db.meals.filter(m=>m.d>=td).sort((a,b)=>a.d.localeCompare(b.d)||SLOTS.findIndex(x=>x[0]===a.s)-SLOTS.findIndex(x=>x[0]===b.s)).forEach(m=>{
+    const items=m.ing.map((ing,i)=>({ing,i})).filter(x=>x.ing.st===0);
+    if(items.length)out.push({m,items});
+  });
+  return out;
+}
+function drawPlanNeeds(box,hd){
+  const g=planNeeds(),n=g.reduce((s,x)=>s+x.items.length,0);
+  if(!n)return;
+  box.appendChild(hd('<span>🍽️ 식단 재료 '+n+'</span>'));
+  g.forEach(({m,items})=>{
+    const h=hd('','sub');h.textContent=mdwOf(m.d)+' '+slotName(m.s)+' · '+(m.name||'메뉴');box.appendChild(h);
+    items.forEach(({ing,i})=>{
+      const d=document.createElement('div');d.className='shopitem';d.dataset.m=m.id;d.dataset.i=i;
+      const ck=document.createElement('button');ck.type='button';ck.className='ck';ck.dataset.a='pck';ck.setAttribute('aria-label','샀어요');
+      const tx=document.createElement('span');tx.className='tx';tx.dataset.a='pck';tx.textContent=ing.n;
+      const hv=document.createElement('button');hv.type='button';hv.className='havebtn';hv.dataset.a='phave';hv.textContent='🏠 집에 있어요';
+      d.append(ck,tx,hv);box.appendChild(d);
+    });
+  });
+}
+$('shopBody').addEventListener('click',e=>{
+  const t=e.target.closest('[data-a="pck"],[data-a="phave"]');if(!t)return;
+  e.stopPropagation();
+  const row=t.closest('.shopitem'),m=db.meals.find(x=>x.id===row.dataset.m),ing=m&&m.ing[+row.dataset.i];if(!ing)return;
+  ing.st=t.dataset.a==='pck'?2:1;save();drawShop();
+},true);
+$('shopTabs').onclick=e=>{const b=e.target.closest('button[data-t]');if(b)setShopTab(b.dataset.t)};
+$('planBody').onclick=e=>{
+  const t=e.target.closest('[data-a]');if(!t)return;
+  if(t.dataset.a==='pw'){const n=+t.dataset.n;planMon=n?dAdd(planMon,n):mondayOf(today());drawPlan();$('planBody').scrollTop=0;return}
+  if(t.dataset.a==='toshop'){setShopTab('shop');return}
+  if(t.dataset.a==='meal')openMeal(t.dataset.d,t.dataset.s);
+};
+/* 한 끼 고치기 */
+function openMeal(d,s){
+  const id=mealIdOf(d,s),old=db.meals.find(x=>x.id===id);
+  if(old){curMeal=old;curMealNew=false}else{curMeal=normMeal({id,d,s});curMealNew=true}
+  $('mealHead').textContent=mdwOf(d)+' '+slotName(s);
+  $('mealName').value=curMeal.name;$('mealIngAdd').value='';
+  drawMealIng();$('mealScreen').hidden=false;
+  if(curMealNew)setTimeout(()=>$('mealName').focus(),50);
+}
+function touchMeal(){
+  if(curMealNew&&mealHas(curMeal)){db.meals.push(curMeal);curMealNew=false;notifyOthers('식단표')}
+  curMeal.by=curMeal.by||myName();
+  if(!curMealNew)queueSave();
+}
+function drawMealIng(){
+  const box=$('mealIng');box.innerHTML='';
+  const n=curMeal.ing.length,need=needOf(curMeal);
+  $('mealIngHd').textContent='재료 '+n+'개'+(n?' · 사야 할 것 '+need+'개':'');
+  if(!n){box.innerHTML='<div class="empty" style="padding:18px 0">아래 칸에 필요한 재료를 적어 보세요.<br>쉼표로 나누면 여러 개를 한 번에 적어요.</div>';return}
+  curMeal.ing.forEach((ing,i)=>{
+    const d=document.createElement('div');d.className='shopitem ing st'+ing.st;d.dataset.i=i;
+    const ck=document.createElement('button');ck.type='button';ck.className='ck';ck.dataset.a='ick';ck.setAttribute('aria-label',ing.st===2?'다시 사야 해요':'샀어요');ck.textContent=ing.st===2?'✓':ing.st===1?'🏠':'';
+    const tx=document.createElement('span');tx.className='tx';tx.textContent=ing.n;
+    const st=document.createElement('span');st.className='by';st.textContent=ing.st===1?'집에 있음':ing.st===2?'샀어요':'사야 함';
+    const hv=document.createElement('button');hv.type='button';hv.className='havebtn'+(ing.st===1?' on':'');hv.dataset.a='ihave';hv.textContent='🏠';hv.setAttribute('aria-label','집에 있어요 표시');
+    const rm=document.createElement('button');rm.type='button';rm.className='rm';rm.dataset.a='irm';rm.setAttribute('aria-label','지우기');rm.textContent='✕';
+    d.append(ck,tx,st,hv,rm);box.appendChild(d);
+  });
+}
+function mealIngAddNow(){
+  const names=$('mealIngAdd').value.split(/[,，\n]/).map(x=>x.trim().slice(0,40)).filter(Boolean);
+  if(!names.length)return;
+  names.forEach(n=>curMeal.ing.push({n,st:0}));
+  $('mealIngAdd').value='';touchMeal();drawMealIng();
+}
+$('mealIngAddBtn').onclick=()=>{mealIngAddNow();$('mealIngAdd').focus()};
+$('mealIngAdd').onkeydown=e=>{if(e.key==='Enter'&&!e.isComposing){e.preventDefault();mealIngAddNow()}};
+$('mealName').oninput=()=>{curMeal.name=$('mealName').value.slice(0,60);touchMeal()};
+$('mealIng').onclick=e=>{
+  const t=e.target.closest('[data-a]');if(!t)return;
+  const i=+t.closest('.shopitem').dataset.i,ing=curMeal.ing[i];if(!ing)return;
+  if(t.dataset.a==='ick')ing.st=ing.st===2?0:2;
+  else if(t.dataset.a==='ihave')ing.st=ing.st===1?0:1;
+  else if(t.dataset.a==='irm')curMeal.ing.splice(i,1);
+  touchMeal();drawMealIng();
+};
+function closeMeal(){
+  clearTimeout(saveTimer);if(!curMealNew)save();
+  $('mealScreen').hidden=true;curMeal=null;curMealNew=false;
+  if(!$('shopScreen').hidden){shopTab==='plan'?drawPlan():drawShop()}
+  drawHome();
+}
+$('mealBack').onclick=closeMeal;
+$('mealDel').onclick=()=>{
+  if(!curMeal)return;
+  if(!curMealNew&&!confirm(mdwOf(curMeal.d)+' '+slotName(curMeal.s)+' 식단을 지울까요? 되돌릴 수 없어요.'))return;
+  if(!curMealNew)db.meals=db.meals.filter(x=>x!==curMeal);
+  curMealNew=false;$('mealScreen').hidden=true;curMeal=null;save();
+  if(!$('shopScreen').hidden){shopTab==='plan'?drawPlan():drawShop()}
+  drawHome();
+};
+
 /* 시작 */
 (async function(){
   let d; try{d=await idb.get('db')}catch(e){}
@@ -3059,8 +3254,8 @@ $('grBack').onclick=()=>{$('growthScreen').hidden=true;drawHome()};
   }
   const fresh=!d;
   if(fresh)d={places:SB_URL?[]:[norm({id:'clover',name:'클로버',lat:37.2703,lng:127.1500,date:today()})]};
-  d.places=(d.places||[]).filter(p=>!/^[wxmgk]/.test(p.id||'')).map(norm);d.trips=(d.trips||[]).map(normTrip);d.home=Object.assign({photo:''},d.home);
-  d.wishes=(d.wishes||[]).map(normWish);d.trash=(d.trash||[]).map(normTrash);d.diary=(d.diary||[]).map(normDiary);d.shop=(d.shop||[]).map(normShop);d.kids=(d.kids||[]).map(normKid);
+  d.places=(d.places||[]).filter(p=>!/^[wxmgkf]/.test(p.id||'')).map(norm);d.trips=(d.trips||[]).map(normTrip);d.home=Object.assign({photo:''},d.home);
+  d.wishes=(d.wishes||[]).map(normWish);d.trash=(d.trash||[]).map(normTrash);d.diary=(d.diary||[]).map(normDiary);d.shop=(d.shop||[]).map(normShop);d.kids=(d.kids||[]).map(normKid);d.meals=(d.meals||[]).map(normMeal);
   db=d;fixAnnis();
   try{synced=(await idb.get('synced'))||{}}catch(e){}
   { const live=new Set(localItems().map(i=>i.id)); Object.keys(synced).forEach(id=>{if(/^m\d/.test(id)&&!live.has(id))delete synced[id]}) }
