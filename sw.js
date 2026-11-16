@@ -1,5 +1,5 @@
 // 앱 화면 파일을 저장해 두어 다음부터 빨리 열리게 하는 파일
-const CACHE = 'cafe-diary-v16';
+const CACHE = 'cafe-diary-v17';
 const SHELL = ['./', './index.html', './manifest.json', './icon-192.png', './icon-512.png'];
 
 self.addEventListener('install', e => {
@@ -28,4 +28,27 @@ self.addEventListener('fetch', e => {
       return res;
     }).catch(() => caches.match(req))
   );
+});
+
+// 알림: 상대가 새로 적으면 서버가 보내 주는 알림을 보여 줌
+self.addEventListener('push', e => {
+  let d = {};
+  try { d = e.data ? e.data.json() : {}; } catch (err) { d = { body: e.data ? e.data.text() : '' }; }
+  e.waitUntil(self.registration.showNotification(d.title || '우리가족기록♡', {
+    body: d.body || '',
+    icon: 'icon-192.png',
+    badge: 'icon-192.png',
+    tag: d.tag || 'fam',
+    renotify: true,
+    data: { url: d.url || './' }
+  }));
+});
+// 알림을 누르면 앱을 열거나 이미 열린 앱으로 이동
+self.addEventListener('notificationclick', e => {
+  e.notification.close();
+  const url = (e.notification.data && e.notification.data.url) || './';
+  e.waitUntil(self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(list => {
+    for (const c of list) { if ('focus' in c) return c.focus(); }
+    return self.clients.openWindow(url);
+  }));
 });

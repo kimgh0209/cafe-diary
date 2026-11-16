@@ -584,6 +584,18 @@ body.trip .chip.on{background:var(--trip);border-color:var(--trip)}
         <div class="sl"><b>내 기본 색</b><span>이 폰에서 새로 적는 일정의 색이에요</span></div>
         <div class="dcolors" id="setMyColors" style="width:100%"></div>
       </div>
+      <div class="setrow" style="flex-wrap:wrap">
+        <div class="sl"><b>내 이름</b><span id="setNameState"></span></div>
+        <div class="setgrp" id="setNameBtns"><button class="btn" type="button" data-n="기현">기현</button><button class="btn" type="button" data-n="진아">진아</button></div>
+      </div>
+      <div class="setrow">
+        <div class="sl"><b>상대에게 알리기</b><span>내가 새로 적으면 상대 폰에 알림이 가요</span></div>
+        <div class="setgrp"><button class="btn" id="setNotifyBtn" type="button">켜짐</button></div>
+      </div>
+      <div class="setrow" style="flex-wrap:wrap">
+        <div class="sl" style="flex:1"><b>알림 받기 (이 폰)</b><span id="setPushState"></span></div>
+        <div class="setgrp"><button class="btn on" id="setPushOn" type="button" hidden>켜기</button><button class="btn" id="setPushTest" type="button" hidden>테스트</button><button class="btn" id="setPushOff" type="button" hidden>끄기</button></div>
+      </div>
       <div class="setrow">
         <div class="sl"><b>타임트리 일정 가져오기</b><span id="setDiaryState">받아 둔 파일(.json)을 골라 주세요</span></div>
         <div class="setgrp"><button class="btn" id="setDiaryImp" type="button">파일 고르기</button><input type="file" id="diaryFile" accept=".json,application/json" hidden></div>
@@ -708,6 +720,7 @@ body.trip .chip.on{background:var(--trip);border-color:var(--trip)}
         <div><label class="lbl" for="dEnd">끝나는 날 (며칠 이어질 때만)</label><input type="date" id="dEnd"></div>
         <div><label class="lbl">색</label><div class="dcolors" id="dColors"></div></div>
         <div><label class="lbl">사진 (선택)</label><div class="photos" id="dPhotos"></div><input type="file" id="dFile" accept="image/*" multiple hidden></div>
+        <label class="lbl" id="dQuietBox" style="display:flex;gap:8px;align-items:center;font-size:14px;color:var(--fg);letter-spacing:0"><input type="checkbox" id="dQuiet" style="width:18px;height:18px;margin:0"> 이번 일정은 상대에게 알리지 않기</label>
         <div class="actions"><button class="btn on" id="dSave" type="button">저장</button><button class="ibtn danger" id="dDel" type="button" hidden>삭제</button></div>
       </section>
     </div>
@@ -775,7 +788,7 @@ body.trip .chip.on{background:var(--trip);border-color:var(--trip)}
 </div></nav>
 
 <script>
-const APP_VER='16';
+const APP_VER='17';
 const $=id=>document.getElementById(id);
 const ACID=[['매우 낮음','쌉쌀하고 묵직한 맛'],['낮음','고소하고 부드러운 맛'],['중간','균형 잡힌 산미'],['높음','과일처럼 상큼한 산미'],['매우 높음','레몬처럼 날카로운 산미']];
 const KIND={spot:{label:'명소',icon:'📍'},food:{label:'식당',icon:'🍽️'},cafe:{label:'카페',icon:'☕'},bakery:{label:'빵집',icon:'🥐'},lodging:{label:'숙소',icon:'🛏️'},move:{label:'교통',icon:'🚗'}};
@@ -1037,7 +1050,7 @@ function onMapClick(lat,lng){
   const m=mode;cancelMode();
   if(m.type==='add'){
     if(section==='trip')addStop({name:m.name||'',lat,lng,kind:'spot'});
-    else{const p=newPlace(lat,lng);p.name=m.name||'';db.places.push(p);save();drawMarkers();openEdit(p.id,true)}
+    else{const p=newPlace(lat,lng);p.name=m.name||'';db.places.push(p);save();drawMarkers();notifyOthers('맛집·카페 기록');openEdit(p.id,true)}
   }else{m.target.lat=lat;m.target.lng=lng;save();drawMarkers();m.reopen()}
 }
 
@@ -1080,7 +1093,7 @@ function pickResult(it){
   MAP.setView(it.lat,it.lng,17);
   if(section==='trip'){addStop({name:it.name,lat:it.lat,lng:it.lng,kind:it.cat||'spot'});return}
   let p=db.places.find(x=>x.name===it.name&&distM(x.lat,x.lng,it.lat,it.lng)<100);
-  if(!p){p=newPlace(it.lat,it.lng);p.name=it.name;p.kind=it.cat==='bakery'?'bakery':'cafe';db.places.push(p);save();drawMarkers()}
+  if(!p){p=newPlace(it.lat,it.lng);p.name=it.name;p.kind=it.cat==='bakery'?'bakery':'cafe';db.places.push(p);save();drawMarkers();notifyOthers('맛집·카페 기록')}
   openEdit(p.id,!it.name);
 }
 $('q').oninput=()=>{
@@ -1145,7 +1158,7 @@ function drawList(){
   });
 }
 function drawTripList(){
-  setBar('여행','','+ 새 여행',()=>{const t=normTrip({id:'t'+Date.now(),start:today()});db.trips.push(t);save();openTrip(t.id,true)});
+  setBar('여행','','+ 새 여행',()=>{const t=normTrip({id:'t'+Date.now(),start:today()});db.trips.push(t);save();notifyOthers('여행 기록');openTrip(t.id,true)});
   const years=[...new Set(db.trips.map(t=>(t.start||'').slice(0,4)).filter(Boolean))].sort().reverse();
   setupFilters('trips',[['all','전체']].concat(years.map(y=>[y,y+'년'])),[['recent','최근순'],['spend','지출순']],'여행, 장소, 같이 간 사람 검색');
   const box=$('listBody');
@@ -1432,7 +1445,7 @@ sFields.forEach(([id,get,set])=>{$(id).oninput=()=>{set(curStop,$(id).value);que
 function addStop(o){
   const t=activeTrip;if(!t)return;
   const s=normStop(Object.assign({id:'s'+Date.now(),date:t.start||today()},o));
-  t.stops.push(s);save();drawMarkers();openStop(s.id,!o.name);
+  t.stops.push(s);save();drawMarkers();notifyOthers('여행 기록');openStop(s.id,!o.name);
 }
 function openStop(id,isNew){
   const t=activeTrip||db.trips.find(x=>x.stops.some(s=>s.id===id));
@@ -1573,7 +1586,7 @@ function startRealtime(){
 }
 async function startSync(){
   syncOn=true;setSync('동기화 중…');
-  try{await syncPull();await migratePhotos();await syncPush();flushUploads();purgeTrash();startRealtime()}
+  try{await syncPull();await migratePhotos();await syncPush();flushUploads();purgeTrash();startRealtime();refreshPushSub()}
   catch(e){setSync('오프라인 · 연결되면 자동으로 올라가요');console.warn('동기화 시작 실패',e)}
 }
 function showLogin(){$('loginScreen').hidden=false;$('logoutBtn').hidden=true}
@@ -1668,6 +1681,7 @@ function drawSettings(){
   $('appVer').textContent='앱 버전 '+APP_VER;
   $('setTrashState').textContent=db.trash.length?db.trash.length+'개 · 30일 뒤 자동으로 지워져요':'비어 있어요';
   drawMyColors();
+  drawPushState();
   showPhotoUsage();
   idb.get('uploads').then(q=>{const n=(q||[]).length;$('setPhotoState').textContent=n?'서버에 올리는 중 '+n+'장 (연결되면 자동으로 올라가요)':'모두 서버에 보관 중'}).catch(()=>{});
 }
@@ -1842,7 +1856,7 @@ function drawWishList(){
 }
 function drawWishKind(){document.querySelectorAll('#wKindSeg button').forEach(b=>b.classList.toggle('on',b.dataset.k===curWish.kind));$('wDone').hidden=!(curWish.kind==='cafe'||curWish.kind==='bakery')}
 function touchWish(){
-  if(curWishNew){db.wishes.push(curWish);curWishNew=false}
+  if(curWishNew){db.wishes.push(curWish);curWishNew=false;notifyOthers('가보고 싶은 곳')}
   queueSave();
 }
 function openWish(idOrObj,isNew){
@@ -2119,7 +2133,7 @@ async function quickAdd(){
   const x=$('dyAdd').value.trim();if(!x)return;
   const ev={i:newEvId(),d:dySel,x:x.slice(0,200)},c=myColor();if(c>1)ev.c=c;
   monthRow(dySel.slice(0,7),true).ev.push(ev);
-  $('dyAdd').value='';await save();drawDiary();
+  $('dyAdd').value='';await save();drawDiary();notifyOthers('일정');
   const l=$('dyList');l.scrollTop=l.scrollHeight;
 }
 $('dyAddBtn').onclick=quickAdd;
@@ -2164,6 +2178,7 @@ function drawDay(){
   $('dText').value=v.x||'';$('dDate').value=v.d||daySel;$('dTime').value=v.t||'';$('dEnd').value=v.e||'';
   dayColor=v.c||1;drawDayColors();
   $('dDel').hidden=!ev;
+  $('dQuietBox').hidden=!!ev;$('dQuiet').checked=false;
   if(ev)armDelete($('dDel'),()=>{
     const row=monthRow(ev.d.slice(0,7));
     if(row)row.ev=row.ev.filter(x=>x!==ev);
@@ -2183,6 +2198,7 @@ async function saveDay(){
   const x=$('dText').value.trim();if(!x){$('dText').focus();return}
   const d=$('dDate').value||daySel;let e=$('dEnd').value;if(e&&e<=d)e='';
   const t=$('dTime').value;
+  const isNew=!dayEd,quiet=$('dQuiet').checked;
   const ev=dayEd||{i:newEvId()};
   const oldYm=dayEd?dayEd.d.slice(0,7):'';
   ev.d=d;ev.x=x.slice(0,200);
@@ -2196,6 +2212,7 @@ async function saveDay(){
   const row=monthRow(ym,true);
   if(!row.ev.includes(ev))row.ev.push(ev);
   selectDay(d);dayEd=null;clearTimeout(saveTimer);await save();
+  if(isNew&&!quiet)notifyOthers('일정');
   $('dayScreen').hidden=true;drawDiary();
 }
 $('dSave').onclick=saveDay;
@@ -2345,6 +2362,81 @@ $('fdWrite').onclick=async()=>{
 $('goFood').onclick=()=>{fdPick=null;$('fdActs').hidden=true;$('fdGo').textContent='돌리기!';$('fdGo').disabled=false;
   $('fdEmoji').textContent='🍽️';$('fdName').textContent='오늘 뭐 먹을까요?';$('fdSub').textContent='';drawFoodChips();$('foodScreen').hidden=false};
 $('fdBack').onclick=()=>{if(fdBusy)return;$('foodScreen').hidden=true;drawHome()};
+
+/* 알림: 내가 새로 적으면 상대 폰에 알림이 가요 (웹 푸시). 내용에는 이름과 종류만 담고, 일정 제목·사진은 보내지 않아요 */
+const PUSH_PUBLIC='BLBlseLwvx7VQ9mo6Ua9FlgRDkTrHHDVaLzQKyEXuQ6tAVZ977YpEfmFbgZ0eD7sJhouihVgB0QTSB2GAh3eorg';
+const NAME_KEY='fam_myname_v1',NOTIFY_KEY='fam_notify_v1'; // 이 폰의 이름 / 상대에게 알리기(기본 켜짐)
+const myName=()=>{try{return localStorage.getItem(NAME_KEY)||''}catch(e){return ''}};
+const notifyOn=()=>{try{return localStorage.getItem(NOTIFY_KEY)!=='off'}catch(e){return true}};
+const pushOK=()=>'serviceWorker' in navigator&&'PushManager' in window&&'Notification' in window;
+const standalone=()=>window.navigator.standalone===true||(window.matchMedia&&matchMedia('(display-mode: standalone)').matches);
+const u8FromB64u=s=>{s=s.replace(/-/g,'+').replace(/_/g,'/');while(s.length%4)s+='=';const b=atob(s),o=new Uint8Array(b.length);for(let i=0;i<b.length;i++)o[i]=b.charCodeAt(i);return o};
+async function getSub(){if(!pushOK())return null;try{const reg=await navigator.serviceWorker.ready;return await reg.pushManager.getSubscription()}catch(e){return null}}
+async function saveSub(sub){ // 이 폰을 서버의 '알림 받을 폰' 목록에 올림
+  if(!sb||!sbUser||!sub)return false;
+  const j=sub.toJSON();if(!j.keys)return false;
+  const {error}=await sb.from('push_subs').upsert({endpoint:j.endpoint,p256dh:j.keys.p256dh,auth:j.keys.auth,device:(navigator.userAgent||'').slice(0,60),updated_at:new Date().toISOString()},{onConflict:'endpoint'});
+  if(error)console.warn('알림 폰 저장 실패',error);
+  return !error;
+}
+async function refreshPushSub(){ // 로그인할 때마다 조용히 갱신 (주소가 바뀌었을 수 있어서)
+  try{if(pushOK()&&Notification.permission==='granted'){const s=await getSub();if(s)await saveSub(s)}}catch(e){}
+}
+async function drawPushState(){
+  const st=$('setPushState'),on=$('setPushOn'),off=$('setPushOff'),test=$('setPushTest'),nm=myName();
+  $('setNameState').textContent=nm?'알림에는 "'+nm+'님이 새로 적었어요"로 보여요':'알림에 보일 이름을 골라 주세요';
+  [...$('setNameBtns').children].forEach(b=>b.classList.toggle('on',b.dataset.n===nm));
+  $('setNotifyBtn').textContent=notifyOn()?'켜짐':'꺼짐';$('setNotifyBtn').classList.toggle('on',notifyOn());
+  on.hidden=off.hidden=test.hidden=true;
+  if(!pushOK()){st.textContent='이 브라우저는 알림을 지원하지 않아요';return}
+  if(!standalone()){st.textContent='홈 화면에 추가한 앱에서만 켤 수 있어요 (사파리 → 공유 → 홈 화면에 추가)';return}
+  if(Notification.permission==='denied'){st.textContent='알림이 막혀 있어요. 폰 설정 → 알림 → 우리가족기록에서 허용해 주세요';return}
+  if(!sbUser){st.textContent='로그인한 뒤에 켤 수 있어요';return}
+  const sub=await getSub();
+  if(sub&&Notification.permission==='granted'){st.textContent='켜짐 · 상대가 새로 적으면 이 폰에 알림이 와요';off.hidden=false;test.hidden=false}
+  else{st.textContent='꺼짐 · 켜면 상대가 새로 적을 때 이 폰에 알림이 와요';on.hidden=false}
+}
+$('setNameBtns').onclick=e=>{const b=e.target.closest('button');if(!b)return;try{localStorage.setItem(NAME_KEY,b.dataset.n)}catch(err){}drawPushState()};
+$('setNotifyBtn').onclick=()=>{try{localStorage.setItem(NOTIFY_KEY,notifyOn()?'off':'on')}catch(e){}drawPushState()};
+$('setPushOn').onclick=async()=>{
+  const st=$('setPushState');
+  try{
+    const perm=await Notification.requestPermission(); // 버튼을 누른 직후에 불러야 허용창이 떠요
+    if(perm!=='granted'){drawPushState();return}
+    const reg=await navigator.serviceWorker.ready;
+    const sub=(await reg.pushManager.getSubscription())||await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:u8FromB64u(PUSH_PUBLIC)});
+    if(!await saveSub(sub)){st.textContent='서버에 저장하지 못했어요. 알림 표를 아직 못 만들었을 수 있어요';return}
+  }catch(e){console.warn(e);st.textContent='알림을 켜지 못했어요: '+(e&&e.message?e.message:'')+' (홈 화면 앱인지, 폰 알림이 허용인지 확인해 주세요)';return}
+  drawPushState();
+};
+$('setPushOff').onclick=async()=>{
+  try{const sub=await getSub();if(sub){const ep=sub.endpoint;await sub.unsubscribe();if(sb&&sbUser)await sb.from('push_subs').delete().eq('endpoint',ep)}}catch(e){console.warn(e)}
+  drawPushState();
+};
+$('setPushTest').onclick=async()=>{ // 나에게 보내 보기 (폰 한 대로도 확인 가능)
+  const st=$('setPushState');st.textContent='테스트 알림을 보내는 중…';
+  try{
+    const {data,error}=await sb.functions.invoke('notify',{body:{test:true,name:myName()}});
+    if(error)throw error;
+    st.textContent=data&&data.sent?'보냈어요! 잠시 뒤 알림이 오는지 확인해 주세요':(data&&data.total===0?'이 폰이 서버에 등록되지 않았어요. 껐다가 다시 켜 보세요':'보내지 못했어요 ('+JSON.stringify(data)+')');
+  }catch(e){st.textContent='보내지 못했어요. 알림 서버가 아직 준비되지 않았을 수 있어요 ('+(e&&e.message?e.message:e)+')'}
+};
+// 새로 적을 때마다 모았다가 한 번에 보냄 (여러 개를 적어도 알림은 한 번)
+let notifyQ={},notifyTimer=null;
+function notifyOthers(what){
+  if(!notifyOn()||!sb||!sbUser)return;
+  notifyQ[what]=(notifyQ[what]||0)+1;
+  clearTimeout(notifyTimer);notifyTimer=setTimeout(flushNotify,6000);
+}
+async function flushNotify(){
+  const keys=Object.keys(notifyQ);if(!keys.length)return;
+  const q=notifyQ;notifyQ={};clearTimeout(notifyTimer);
+  if(!sb||!sbUser)return;
+  const what=keys.map(k=>q[k]>1?k+' '+q[k]+'개':k).join(', ');
+  try{await sb.functions.invoke('notify',{body:{name:myName(),what}})}catch(e){console.warn('알림 보내기 실패',e)}
+}
+document.addEventListener('visibilitychange',()=>{if(document.hidden)flushNotify()});
+window.addEventListener('pagehide',flushNotify);
 
 /* 시작 */
 (async function(){
