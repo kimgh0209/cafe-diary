@@ -102,9 +102,30 @@ body.trip .ibtn{color:var(--trip)}
 .home .cam{flex:none;width:40px;height:40px;border-radius:50%;border:0;background:rgba(0,0,0,.35);color:#fff;display:grid;place-items:center;cursor:pointer;
   backdrop-filter:blur(6px)}
 .home .cam svg{width:20px;height:20px;stroke:#fff;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
-.home .menu{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
-.home .menu .mbtn{padding:10px 2px 8px}
-.home .menu .mbtn .t{font-size:12px}
+.home .menu{display:grid;grid-template-columns:repeat(6,1fr);gap:5px}
+.home .menu .mbtn{padding:9px 1px 7px;gap:5px;border-radius:14px}
+.home .menu .mbtn .ic{width:34px;height:34px;border-radius:10px}
+.home .menu .mbtn .ic svg{width:20px;height:20px}
+.home .menu .mbtn .t{font-size:11.5px;letter-spacing:-.03em}
+.home .menu .mbtn .s{font-size:11px}
+.mbtn.grow .ic{background:#7a6bd6}
+.grform{flex:none;display:grid;gap:8px;padding:8px max(12px,env(safe-area-inset-right,0px)) calc(10px + env(safe-area-inset-bottom,0px)) max(12px,env(safe-area-inset-left,0px));border-top:1px solid var(--line);background:var(--panel)}
+.grform .r{display:flex;gap:8px;align-items:center}
+.grform label{flex:none;font-size:13px;color:var(--muted)}
+.grform input{flex:1;min-width:0;border-radius:999px;padding:8px 14px}
+.grsum .grline{margin:6px 0;font-size:15px}
+.grsum .grsub{color:var(--muted);font-size:12px}
+.grbar{height:10px;border-radius:999px;background:var(--line);overflow:hidden;margin:10px 0 6px}
+.grbar i{display:block;height:100%;border-radius:999px;background:#5b9a4d}
+.grbar i.low{background:#e0953a}
+.grstat{font-size:14px;font-weight:600}
+.grstat.ok{color:#4a8a3d}.grstat.low{color:#c9771a}
+.grlegend{display:flex;gap:14px;font-size:12px;color:var(--muted);margin-top:4px}
+.grlegend i{display:inline-block;width:14px;height:3px;border-radius:2px;margin-right:5px;vertical-align:middle}
+.grlegend i.dash{background:repeating-linear-gradient(90deg,var(--muted) 0 5px,transparent 5px 9px)}
+.gritem{align-items:center}
+.gritem em{font-style:normal;font-size:12px}.gritem em.up{color:#4a8a3d}.gritem em.dn{color:#c0392b}
+.gritem .rm{border:0;background:none;color:var(--muted);font-size:16px;cursor:pointer;padding:2px 6px}
 .mbtn.shop .ic{background:#5b9a4d}
 .shopitem{display:flex;align-items:center;gap:10px;padding:10px 4px;border-bottom:1px solid var(--line)}
 .shopitem .ck{flex:none;width:26px;height:26px;border-radius:50%;border:2px solid var(--line);background:var(--bg);color:#fff;font-size:15px;line-height:1;cursor:pointer;display:grid;place-items:center;padding:0}
@@ -605,6 +626,9 @@ body.trip .chip.on{background:var(--trip);border-color:var(--trip)}
       <button class="mbtn shop" id="goShop" type="button">
         <span class="ic"><svg viewBox="0 0 24 24"><path d="M3 9h18l-2 10H5z"/><path d="M8 9l3-5M16 9l-3-5"/></svg></span>
         <span><div class="t">장보기</div><div class="s" id="homeShopSub"></div></span></button>
+      <button class="mbtn grow" id="goGrowth" type="button">
+        <span class="ic"><svg viewBox="0 0 24 24"><path d="M12 21v-9"/><path d="M12 13c0-4 3-6 7-6 0 4-3 6-7 6z"/><path d="M12 16c0-3-2-5-6-5 0 3 2 5 6 5z"/></svg></span>
+        <span><div class="t">성장</div><div class="s" id="homeGrowthSub"></div></span></button>
     </div>
 
   </div>
@@ -737,6 +761,19 @@ body.trip .chip.on{background:var(--trip);border-color:var(--trip)}
       <select id="shopCat" aria-label="물품 종류"></select>
       <input type="text" id="shopAdd" placeholder="살 것, 살 것…" maxlength="100" autocomplete="off" aria-label="살 것 적기">
       <button class="btn on" id="shopAddBtn" type="button">추가</button>
+    </div>
+  </div>
+</div>
+
+ <!-- 아이 성장 기록 -->
+<div class="screen editor over" id="growthScreen" hidden>
+  <div class="page">
+    <div class="bar"><button class="ibtn" id="grBack" type="button">← 닫기</button><h1>아이 성장 기록</h1></div>
+    <div class="filters"><div class="chips" id="grChips"></div></div>
+    <div class="scroll" id="grBody"></div>
+    <div class="grform">
+      <div class="r"><label for="grDate">측정일</label><input type="date" id="grDate"></div>
+      <div class="r"><input type="number" id="grH" inputmode="decimal" step="0.1" min="30" max="220" placeholder="키 cm" aria-label="키 cm"><input type="number" id="grW" inputmode="decimal" step="0.1" min="2" max="150" placeholder="몸무게 kg" aria-label="몸무게 kg"><button class="btn on" id="grAdd" type="button">추가</button></div>
     </div>
   </div>
 </div>
@@ -891,7 +928,7 @@ body.trip .chip.on{background:var(--trip);border-color:var(--trip)}
 </div></nav>
 
 <script>
-const APP_VER='26';
+const APP_VER='27';
 const $=id=>document.getElementById(id);
 const ACID=[['매우 낮음','쌉쌀하고 묵직한 맛'],['낮음','고소하고 부드러운 맛'],['중간','균형 잡힌 산미'],['높음','과일처럼 상큼한 산미'],['매우 높음','레몬처럼 날카로운 산미']];
 const KIND={spot:{label:'명소',icon:'📍'},food:{label:'식당',icon:'🍽️'},cafe:{label:'카페',icon:'☕'},bakery:{label:'빵집',icon:'🥐'},lodging:{label:'숙소',icon:'🛏️'},move:{label:'교통',icon:'🚗'}};
@@ -927,7 +964,7 @@ const idb={
   async del(k){const d=await this.open();return new Promise((ok,no)=>{const t=d.transaction('kv','readwrite');t.objectStore('kv').delete(k);t.oncomplete=()=>ok();t.onerror=()=>no(t.error)})}
 };
 let authDone;const authReady=new Promise(r=>authDone=r);
-let db={places:[],trips:[],home:{photo:''},wishes:[],trash:[],diary:[],shop:[]}, cur=null, curTrip=null, curStop=null, activeTrip=null, section=null, saveTimer;
+let db={places:[],trips:[],home:{photo:''},wishes:[],trash:[],diary:[],shop:[],kids:[]}, cur=null, curTrip=null, curStop=null, activeTrip=null, section=null, saveTimer;
 function setSaved(t){document.querySelectorAll('.saved').forEach(e=>e.textContent=t)}
 async function save(){
   let sc=null;
@@ -1102,13 +1139,13 @@ function drawHome(){
   $('homeTripSub').textContent=db.trips.length+'개';
   $('homeWishSub').textContent=db.wishes.length+'곳';
   { const r=monthRow(ymOfNow()); $('homeDiarySub').textContent=(r?r.ev.length:0)+'개'; }
-  { const n=db.shop.filter(s=>!s.done).length; $('homeShopSub').textContent=n+'개' }
+  { const n=db.shop.filter(s=>!s.done).length; $('homeShopSub').textContent=n+'개'; $('homeGrowthSub').textContent=db.kids.length+'번' }
   drawMemory();
   showPhoto();
 }
 function showHome(){
   cancelMode();section=null;activeTrip=null;
-  ['listScreen','editScreen','tripScreen','stopScreen','setScreen','annScreen','wishScreen','wishEdit','statScreen','trashScreen','diaryScreen','dayScreen','foodScreen','cycleScreen','shopScreen'].forEach(i=>$(i).hidden=true);
+  ['listScreen','editScreen','tripScreen','stopScreen','setScreen','annScreen','wishScreen','wishEdit','statScreen','trashScreen','diaryScreen','dayScreen','foodScreen','cycleScreen','shopScreen','growthScreen'].forEach(i=>$(i).hidden=true);
   document.body.classList.remove('trip');
   drawHome();$('homeScreen').hidden=false;
 }
@@ -1587,16 +1624,17 @@ function canon(v){
 }
 const hashOf=o=>JSON.stringify(canon(o));
 /* 가보고 싶은 곳(w…)과 휴지통(x…)은 서버 표의 종류 제한 때문에 'place' 줄로 저장하고, id 첫 글자로 구분해요 */
-const wishId=id=>/^w/.test(id),trashId=id=>/^x/.test(id),diaryId=id=>/^m\d/.test(id),shopId=id=>/^g/.test(id);
-function arrOf(id,kind){return kind==='trip'?db.trips:wishId(id)?db.wishes:trashId(id)?db.trash:diaryId(id)?db.diary:shopId(id)?db.shop:db.places}
+const wishId=id=>/^w/.test(id),trashId=id=>/^x/.test(id),diaryId=id=>/^m\d/.test(id),shopId=id=>/^g/.test(id),kidId=id=>/^k/.test(id);
+function arrOf(id,kind){return kind==='trip'?db.trips:wishId(id)?db.wishes:trashId(id)?db.trash:diaryId(id)?db.diary:shopId(id)?db.shop:kidId(id)?db.kids:db.places}
+function normKid(r){return Object.assign({id:'k'+Date.now().toString(36),who:'',d:'',h:null,w:null,by:'',at:new Date().toISOString()},r)}
 function normShop(s){return Object.assign({id:'g'+Date.now().toString(36),x:'',done:false,by:'',at:new Date().toISOString()},s)}
 function normWish(w){return Object.assign({id:'w'+Date.now(),kind:'cafe',name:'',addr:'',off:'',hours:'',park:'',lat:0,lng:0,added:today()},w)}
 function normTrash(x){return Object.assign({lat:0,lng:0,name:'',tk:'place',at:new Date().toISOString(),item:{}},x)}
 function normDiary(r){r=Object.assign({ym:'',ev:[],lat:0,lng:0},r);r.ym=r.ym||String(r.id).slice(1);r.ev=(r.ev||[]).filter(Boolean);return r}
-function normFor(id,kind){return kind==='trip'?normTrip:wishId(id)?normWish:trashId(id)?normTrash:diaryId(id)?normDiary:shopId(id)?normShop:norm}
+function normFor(id,kind){return kind==='trip'?normTrip:wishId(id)?normWish:trashId(id)?normTrash:diaryId(id)?normDiary:shopId(id)?normShop:kidId(id)?normKid:norm}
 function localItems(){
   return [{id:'home',kind:'home',obj:db.home}].concat(db.places.map(o=>({id:o.id,kind:'place',obj:o})),db.trips.map(o=>({id:o.id,kind:'trip',obj:o})),
-    db.wishes.map(o=>({id:o.id,kind:'place',obj:o})),db.trash.map(o=>({id:o.id,kind:'place',obj:o})),db.diary.map(o=>({id:o.id,kind:'place',obj:o})),db.shop.map(o=>({id:o.id,kind:'place',obj:o})));
+    db.wishes.map(o=>({id:o.id,kind:'place',obj:o})),db.trash.map(o=>({id:o.id,kind:'place',obj:o})),db.diary.map(o=>({id:o.id,kind:'place',obj:o})),db.shop.map(o=>({id:o.id,kind:'place',obj:o})),db.kids.map(o=>({id:o.id,kind:'place',obj:o})));
 }
 function stamp(){
   const now=new Date().toISOString();
@@ -1644,6 +1682,7 @@ function refreshUI(){
   if(!$('trashScreen').hidden)drawTrash();
   if(!$('diaryScreen').hidden)drawDiary();
   if(!$('shopScreen').hidden)drawShop();
+  if(!$('growthScreen').hidden)drawGrowth();
 }
 async function syncPull(){
   const {data,error}=await sb.from('items').select('*');
@@ -2904,6 +2943,101 @@ $('shopBody').onclick=e=>{
 $('goShop').onclick=()=>{drawShop();$('shopScreen').hidden=false};
 $('shopBack').onclick=()=>{$('shopScreen').hidden=true;drawHome()};
 
+/* 아이 성장 기록: 기록 하나가 서버 'place' 줄 하나(id 첫 글자 k). {id,who,d(측정일),h(키 cm),w(몸무게 kg),by,at} */
+const KIDS=['한율','이현','서비'],GROW_GOAL=6; // 1년에 6cm 이상
+let grKid=KIDS[0];
+const grNum=x=>{const v=parseFloat(String(x).replace(',','.'));return isFinite(v)?v:null};
+const grDate=s=>{const m=String(s).match(/^(\d{4})-(\d\d)-(\d\d)$/);return m?+m[1]%100+'.'+(+m[2])+'.'+(+m[3]):''};
+const grMD=s=>(+s.slice(5,7))+'/'+(+s.slice(8,10));
+function growthOf(who){return db.kids.filter(k=>k.who===who&&k.d).sort((a,b)=>a.d.localeCompare(b.d)||String(a.at).localeCompare(String(b.at)))}
+// 가장 최근 키와, 그 1년 전(365일)에 가장 가까운 기록을 비교해서 1년 성장 속도를 구함
+function growthStats(recs){
+  const hs=recs.filter(r=>r.h!=null);if(hs.length<2)return null;
+  const last=hs[hs.length-1];let best=null;
+  hs.slice(0,-1).forEach(r=>{const span=dNum(last.d)-dNum(r.d);if(span<=0)return;const sc=Math.abs(span-365);if(!best||sc<best.sc)best={r,span,sc}});
+  if(!best)return null;
+  const delta=+(last.h-best.r.h).toFixed(1);
+  return {last,base:best.r,span:best.span,delta,perYear:+(delta*365/best.span).toFixed(1),full:best.span>=330,enough:best.span>=60};
+}
+function drawGrowthChart(recs){
+  const hs=recs.filter(r=>r.h!=null);if(hs.length<2)return '';
+  const W=320,H=170,L=34,R=10,T=10,B=24;
+  const t0=dNum(hs[0].d),t1=Math.max(dNum(hs[hs.length-1].d),t0+1);
+  const tgtEnd=hs[0].h+GROW_GOAL*(t1-t0)/365;
+  const vals=hs.map(r=>r.h).concat(tgtEnd);
+  let lo=Math.floor(Math.min(...vals)-1),hi=Math.ceil(Math.max(...vals)+1);if(hi-lo<4)hi=lo+4;
+  const X=t=>L+(t-t0)/(t1-t0)*(W-L-R),Y=v=>T+(hi-v)/(hi-lo)*(H-T-B);
+  const pts=hs.map(r=>X(dNum(r.d)).toFixed(1)+','+Y(r.h).toFixed(1)).join(' ');
+  let g='';
+  for(let v=lo;v<=hi;v+=Math.max(1,Math.ceil((hi-lo)/4))){g+='<line x1="'+L+'" x2="'+(W-R)+'" y1="'+Y(v).toFixed(1)+'" y2="'+Y(v).toFixed(1)+'" stroke="var(--line)"/><text x="'+(L-4)+'" y="'+(Y(v)+4).toFixed(1)+'" text-anchor="end" font-size="10" fill="var(--muted)">'+v+'</text>'}
+  const dots=hs.map(r=>'<circle cx="'+X(dNum(r.d)).toFixed(1)+'" cy="'+Y(r.h).toFixed(1)+'" r="3.2" fill="var(--accent)"/>').join('');
+  return '<svg viewBox="0 0 '+W+' '+H+'" width="100%" role="img" aria-label="키 변화 그래프">'+g
+    +'<line x1="'+X(t0).toFixed(1)+'" y1="'+Y(hs[0].h).toFixed(1)+'" x2="'+X(t1).toFixed(1)+'" y2="'+Y(tgtEnd).toFixed(1)+'" stroke="var(--muted)" stroke-width="1.5" stroke-dasharray="5 4"/>'
+    +'<polyline points="'+pts+'" fill="none" stroke="var(--accent)" stroke-width="2.2" stroke-linejoin="round"/>'+dots
+    +'<text x="'+L+'" y="'+(H-6)+'" font-size="10" fill="var(--muted)">'+grDate(hs[0].d)+'</text>'
+    +'<text x="'+(W-R)+'" y="'+(H-6)+'" text-anchor="end" font-size="10" fill="var(--muted)">'+grDate(hs[hs.length-1].d)+'</text></svg>'
+    +'<div class="grlegend"><span><i style="background:var(--accent)"></i>실제 키</span><span><i class="dash"></i>1년 '+GROW_GOAL+'cm 속도</span></div>';
+}
+function drawGrowth(){
+  const chips=$('grChips');chips.innerHTML='';
+  KIDS.forEach(k=>{
+    const s=growthStats(growthOf(k)),low=s&&s.enough&&s.perYear<GROW_GOAL;
+    const b=document.createElement('button');b.type='button';b.className='chip'+(grKid===k?' on':'');b.textContent=k+(low?' ⚠️':'');
+    b.onclick=()=>{grKid=k;drawGrowth()};chips.appendChild(b);
+  });
+  const box=$('grBody'),recs=growthOf(grKid),st=growthStats(recs);
+  let h='';
+  if(!recs.length)h+='<div class="empty">아직 기록이 없어요.<br>아래에서 측정한 날짜와 키·몸무게를<br>적어 보세요.</div>';
+  else{
+    const lh=[...recs].reverse().find(r=>r.h!=null),lw=[...recs].reverse().find(r=>r.w!=null);
+    h+='<div class="bigstat"><div><b>'+(lh?lh.h+'cm':'-')+'</b>최근 키'+(lh?' ('+grMD(lh.d)+')':'')+'</div><div><b>'+(lw?lw.w+'kg':'-')+'</b>최근 몸무게'+(lw?' ('+grMD(lw.d)+')':'')+'</div></div>';
+    h+='<section class="sec grsum"><h2><span>1년 '+GROW_GOAL+'cm 점검</span></h2>';
+    if(!st)h+='<div class="hint">키 기록이 2번 이상 쌓이고, 두 기록이 60일 이상 떨어져 있으면 계산해 드려요.</div>';
+    else{
+      const mo=Math.round(st.span/30.4),ok=st.perYear>=GROW_GOAL,pct=Math.max(0,Math.min(100,st.perYear/GROW_GOAL*100));
+      h+='<div class="grline">'+(st.full?'최근 1년':'최근 '+mo+'개월')+' 동안 <b>'+(st.delta>=0?'+':'')+st.delta+'cm</b> <span class="grsub">('+grMD(st.base.d)+' '+st.base.h+'cm → '+grMD(st.last.d)+' '+st.last.h+'cm)</span></div>';
+      if(!st.full)h+='<div class="grline">1년으로 계산하면 약 <b>'+st.perYear+'cm</b> <span class="grsub">(기록 기간이 1년보다 짧아서 참고용이에요)</span></div>';
+      h+='<div class="grbar"><i style="width:'+pct+'%" class="'+(ok?'ok':'low')+'"></i></div>';
+      h+=st.enough?(ok?'<div class="grstat ok">✅ 1년 '+GROW_GOAL+'cm 이상 크는 속도예요</div>':'<div class="grstat low">⚠️ 1년 '+GROW_GOAL+'cm까지 '+(GROW_GOAL-st.perYear).toFixed(1)+'cm 모자라요</div>')
+        :'<div class="grstat">기간이 짧아서 아직 판단하기 일러요</div>';
+    }
+    h+='</section>';
+    const chart=drawGrowthChart(recs);if(chart)h+='<section class="sec"><h2><span>키 변화</span></h2>'+chart+'</section>';
+    h+='<section class="sec"><h2><span>기록 '+recs.length+'번</span></h2><div id="grList"></div></section>';
+  }
+  h+='<div class="hint" style="margin-top:12px">1년에 6cm는 일반적인 참고 기준이에요. 성장이 걱정되면 소아과에서 상담해 보세요.</div>';
+  box.innerHTML=h;
+  const list=$('grList');
+  if(list)[...recs].reverse().forEach(r=>{
+    const i=recs.indexOf(r),prev=recs.slice(0,i).reverse().find(x=>x.h!=null&&r.h!=null);
+    const d=prev?+(r.h-prev.h).toFixed(1):null;
+    const row=document.createElement('div');row.className='kv gritem';row.dataset.i=r.id;
+    row.innerHTML='<span>'+esc(r.d.slice(0,4)+'.'+(+r.d.slice(5,7))+'.'+(+r.d.slice(8,10)))+'</span><span>'+(r.h!=null?r.h+'cm':'-')+(d!=null?' <em class="'+(d>=0?'up':'dn')+'">'+(d>=0?'+':'')+d+'</em>':'')+' · '+(r.w!=null?r.w+'kg':'-')+'</span><button type="button" class="rm" data-a="rm" aria-label="지우기">✕</button>';
+    list.appendChild(row);
+  });
+}
+function growthAdd(){
+  const d=$('grDate').value||today(),h=grNum($('grH').value),w=grNum($('grW').value);
+  if(h==null&&w==null){alert('키나 몸무게를 적어 주세요.');return}
+  if(h!=null&&(h<30||h>220)){alert('키는 30~220cm 사이로 적어 주세요.');return}
+  if(w!=null&&(w<2||w>150)){alert('몸무게는 2~150kg 사이로 적어 주세요.');return}
+  const hh=h==null?null:Math.round(h*10)/10,ww=w==null?null:Math.round(w*10)/10;
+  const same=db.kids.find(k=>k.who===grKid&&k.d===d);
+  if(same){if(hh!=null)same.h=hh;if(ww!=null)same.w=ww}
+  else db.kids.push(normKid({id:'k'+Date.now().toString(36)+Math.random().toString(36).slice(2,5),who:grKid,d,h:hh,w:ww,by:myName()}));
+  $('grH').value='';$('grW').value='';
+  save();drawGrowth();notifyOthers('성장 기록');
+}
+$('grAdd').onclick=growthAdd;
+['grH','grW'].forEach(id=>$(id).onkeydown=e=>{if(e.key==='Enter'&&!e.isComposing){e.preventDefault();growthAdd()}});
+$('grBody').onclick=e=>{
+  const t=e.target.closest('[data-a="rm"]');if(!t)return;
+  const r=db.kids.find(k=>k.id===t.closest('.gritem').dataset.i);if(!r)return;
+  if(confirm(grKid+' '+r.d+' 기록을 지울까요? 되돌릴 수 없어요.')){db.kids=db.kids.filter(k=>k!==r);save();drawGrowth()}
+};
+$('goGrowth').onclick=()=>{$('grDate').value=today();drawGrowth();$('growthScreen').hidden=false};
+$('grBack').onclick=()=>{$('growthScreen').hidden=true;drawHome()};
+
 /* 시작 */
 (async function(){
   let d; try{d=await idb.get('db')}catch(e){}
@@ -2912,8 +3046,8 @@ $('shopBack').onclick=()=>{$('shopScreen').hidden=true;drawHome()};
   }
   const fresh=!d;
   if(fresh)d={places:SB_URL?[]:[norm({id:'clover',name:'클로버',lat:37.2703,lng:127.1500,date:today()})]};
-  d.places=(d.places||[]).filter(p=>!/^[wxmg]/.test(p.id||'')).map(norm);d.trips=(d.trips||[]).map(normTrip);d.home=Object.assign({photo:''},d.home);
-  d.wishes=(d.wishes||[]).map(normWish);d.trash=(d.trash||[]).map(normTrash);d.diary=(d.diary||[]).map(normDiary);d.shop=(d.shop||[]).map(normShop);
+  d.places=(d.places||[]).filter(p=>!/^[wxmgk]/.test(p.id||'')).map(norm);d.trips=(d.trips||[]).map(normTrip);d.home=Object.assign({photo:''},d.home);
+  d.wishes=(d.wishes||[]).map(normWish);d.trash=(d.trash||[]).map(normTrash);d.diary=(d.diary||[]).map(normDiary);d.shop=(d.shop||[]).map(normShop);d.kids=(d.kids||[]).map(normKid);
   db=d;fixAnnis();
   try{synced=(await idb.get('synced'))||{}}catch(e){}
   { const live=new Set(localItems().map(i=>i.id)); Object.keys(synced).forEach(id=>{if(/^m\d/.test(id)&&!live.has(id))delete synced[id]}) }
