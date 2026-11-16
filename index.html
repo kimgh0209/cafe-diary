@@ -214,7 +214,7 @@ body.trip .results .manual{color:var(--trip)}
 
 /* 홈: 설정 버튼, 기념일(D+) */
 .home .btns{display:flex;gap:8px;flex:none}
-.dd{margin-top:8px;border:0;border-radius:999px;padding:4px 12px;font:inherit;font-size:12px;cursor:pointer;color:#fff;background:rgba(0,0,0,.32);
+.dd{margin-top:6px;border:0;border-radius:999px;padding:4px 12px;font:inherit;font-size:12px;cursor:pointer;color:#fff;background:rgba(0,0,0,.32);
   backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);display:inline-flex;gap:6px;align-items:baseline;transition:opacity .25s}
 .dd[hidden]{display:none}
 .dd.fade{opacity:0}
@@ -289,9 +289,10 @@ body.trip .chip.on{background:var(--trip);border-color:var(--trip)}
 
 /* 가보고 싶은 곳 · 지난 오늘 · 통계 · 휴지통 */
 .mbtn.wish .ic{background:#c9708f}
-.home .memory{margin-top:8px;margin-right:6px;border:0;border-radius:999px;padding:4px 12px;font:inherit;font-size:12px;cursor:pointer;color:#fff;background:rgba(0,0,0,.32);
+.home .memory{margin-top:6px;margin-right:6px;border:0;border-radius:999px;padding:4px 12px;font:inherit;font-size:12px;cursor:pointer;color:#fff;background:rgba(0,0,0,.32);
   backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);display:inline-flex;gap:6px;align-items:baseline;max-width:100%;transition:opacity .25s}
 .home .memory[hidden]{display:none}
+.home .memory span{white-space:nowrap}
 .home .memory.fade{opacity:0}
 .home .memory .t{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:210px}
 .home.light .memory{background:rgba(255,255,255,.55);color:#3b2a20}
@@ -337,6 +338,16 @@ body.trip .chip.on{background:var(--trip);border-color:var(--trip)}
 .drow i{width:10px;height:10px;border-radius:50%;flex:none}
 .drow .tm{color:var(--muted);font-size:13px;flex:none;font-variant-numeric:tabular-nums}
 .drow .tx{min-width:0;flex:1;overflow-wrap:anywhere}
+.reel{margin:8px auto 18px;max-width:340px;background:var(--bg);border:1px solid var(--line);border-radius:26px;padding:26px 18px 22px;text-align:center}
+.reel .re{font-size:68px;line-height:1.1}
+.reel .rn{font-size:28px;font-weight:700;margin-top:6px;word-break:keep-all}
+.reel .rs{font-size:13px;color:var(--muted);margin-top:8px;min-height:20px;overflow-wrap:anywhere}
+.reel.spin .re{animation:fdshake .18s linear infinite}
+@keyframes fdshake{0%{transform:translateY(0) rotate(-6deg)}50%{transform:translateY(-6px) rotate(6deg)}100%{transform:translateY(0) rotate(-6deg)}}
+@media (prefers-reduced-motion:reduce){.reel.spin .re{animation:none}}
+#fdActs[hidden]{display:none}
+.fdgo{display:block;margin:0 auto 12px;font-size:20px;font-weight:700;padding:14px 34px}
+.fdchips{display:flex;flex-wrap:wrap;gap:6px;justify-content:center}
 .dysb{flex:1;min-height:0;display:flex;flex-direction:column}
 .dysb[hidden]{display:none}
 .dcolors{display:flex;gap:10px;flex-wrap:wrap}
@@ -508,7 +519,8 @@ body.trip .chip.on{background:var(--trip);border-color:var(--trip)}
     <div class="top">
       <div><h1>우리가족기록♡</h1><div class="date" id="homeDate"></div>
         <button class="dd" id="ddPill" type="button" hidden aria-label="기념일 보기"><span id="ddName"></span><b id="ddVal"></b></button>
-        <button class="memory" id="homeMemory" type="button" hidden><span>📅</span><span class="y"></span><span class="t"></span></button></div>
+        <button class="memory" id="homeMemory" type="button" hidden><span>📅</span><span class="y"></span><span class="t"></span></button>
+        <button class="memory" id="goFood" type="button">🎲 오늘 뭐 먹지?</button></div>
       <div class="btns">
         <button class="cam" id="homeStat" type="button" aria-label="통계">
           <svg viewBox="0 0 24 24"><path d="M5 20V11M12 20V4M19 20v-6"/></svg></button>
@@ -527,7 +539,7 @@ body.trip .chip.on{background:var(--trip);border-color:var(--trip)}
         <span><div class="t">여행</div><div class="s" id="homeTripSub"></div></span></button>
       <button class="mbtn wish" id="goWish" type="button">
         <span class="ic"><svg viewBox="0 0 24 24"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.5A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/></svg></span>
-        <span><div class="t">가보고 싶은 곳</div><div class="s" id="homeWishSub"></div></span></button>
+        <span><div class="t">가볼 곳</div><div class="s" id="homeWishSub"></div></span></button>
       <button class="mbtn diary" id="goDiary" type="button">
         <span class="ic"><svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="15" rx="2"/><path d="M4 10h16M9 3v4M15 3v4"/></svg></span>
         <span><div class="t">일정</div><div class="s" id="homeDiarySub"></div></span></button>
@@ -702,6 +714,23 @@ body.trip .chip.on{background:var(--trip);border-color:var(--trip)}
   </div>
 </div>
 
+<!-- 오늘 뭐 먹지? -->
+<div class="screen editor over" id="foodScreen" hidden>
+  <div class="page">
+    <div class="bar"><button class="ibtn" id="fdBack" type="button">← 닫기</button><h1>오늘 뭐 먹지?</h1></div>
+    <div class="scroll">
+      <div class="reel" id="fdReel"><div class="re" id="fdEmoji">🍽️</div><div class="rn" id="fdName">오늘 뭐 먹을까요?</div><div class="rs" id="fdSub"></div></div>
+      <button class="btn on fdgo" id="fdGo" type="button">돌리기!</button>
+      <div class="actions" id="fdActs" hidden style="justify-content:center"><button class="btn" id="fdWrite" type="button">오늘 일정에 적기</button></div>
+      <section class="sec">
+        <h2><span>나올 수 있는 종류</span></h2>
+        <div class="wmeta">눌러서 빼거나 넣을 수 있어요. 숫자는 일정에 적은 횟수예요. 자주 먹고, 요즘 덜 먹은 게 더 잘 나와요.</div>
+        <div class="fdchips" id="fdChips"></div>
+      </section>
+    </div>
+  </div>
+</div>
+
 <!-- 앱 잠금 -->
 <div class="screen lock" id="lockScreen" hidden>
   <div class="box">
@@ -746,7 +775,7 @@ body.trip .chip.on{background:var(--trip);border-color:var(--trip)}
 </div></nav>
 
 <script>
-const APP_VER='15';
+const APP_VER='16';
 const $=id=>document.getElementById(id);
 const ACID=[['매우 낮음','쌉쌀하고 묵직한 맛'],['낮음','고소하고 부드러운 맛'],['중간','균형 잡힌 산미'],['높음','과일처럼 상큼한 산미'],['매우 높음','레몬처럼 날카로운 산미']];
 const KIND={spot:{label:'명소',icon:'📍'},food:{label:'식당',icon:'🍽️'},cafe:{label:'카페',icon:'☕'},bakery:{label:'빵집',icon:'🥐'},lodging:{label:'숙소',icon:'🛏️'},move:{label:'교통',icon:'🚗'}};
@@ -962,7 +991,7 @@ function drawHome(){
 }
 function showHome(){
   cancelMode();section=null;activeTrip=null;
-  ['listScreen','editScreen','tripScreen','stopScreen','setScreen','annScreen','wishScreen','wishEdit','statScreen','trashScreen','diaryScreen','dayScreen'].forEach(i=>$(i).hidden=true);
+  ['listScreen','editScreen','tripScreen','stopScreen','setScreen','annScreen','wishScreen','wishEdit','statScreen','trashScreen','diaryScreen','dayScreen','foodScreen'].forEach(i=>$(i).hidden=true);
   document.body.classList.remove('trip');
   drawHome();$('homeScreen').hidden=false;
 }
@@ -2178,25 +2207,144 @@ async function importDiary(file){
   try{
     const j=JSON.parse(await file.text());
     if(!j||!Array.isArray(j.events))throw new Error('format');
-    const have=new Set();db.diary.forEach(r=>r.ev.forEach(ev=>have.add(ev.i)));
+    const have=new Map();db.diary.forEach(r=>r.ev.forEach(ev=>have.set(ev.i,ev)));
     const ok=o=>o&&o.i&&typeof o.x==='string'&&o.x.trim()&&/^\d{4}-\d{2}-\d{2}$/.test(o.d||'');
-    const add=j.events.filter(o=>ok(o)&&!have.has('t'+o.i)),skip=j.events.filter(ok).length-add.length;
-    if(!add.length){st.textContent='가져올 새 일정이 없어요'+(skip?' (이미 있는 일정 '+skip+'개)':'');return}
-    if(!confirm('일정 '+add.length+'개를 가져올까요?'+(skip?'\n(이미 있는 '+skip+'개는 건너뛰어요)':'')))return;
+    const good=j.events.filter(ok);
+    const add=good.filter(o=>!have.has('t'+o.i));
+    const fOf=o=>typeof o.f==='string'&&o.f.length&&o.f.length<=12?o.f:'';
+    const tag=good.filter(o=>have.has('t'+o.i)&&fOf(o)&&have.get('t'+o.i).f!==fOf(o));
+    const skip=good.length-add.length;
+    if(!add.length&&!tag.length){st.textContent='가져올 새 일정이 없어요'+(skip?' (이미 있는 일정 '+skip+'개)':'');return}
+    if(!confirm((add.length?'새 일정 '+add.length+'개를 가져올까요?':'')+(tag.length?(add.length?'\n':'')+'음식 표시 '+tag.length+'개를 갱신할까요?':'')+(skip?'\n(이미 있는 '+skip+'개는 그대로 둬요)':'')))return;
     add.forEach(o=>{
       const ev={i:'t'+o.i,d:o.d,x:o.x.trim().slice(0,200)};
       if(/^\d\d:\d\d$/.test(o.t||''))ev.t=o.t;
       if(o.e&&/^\d{4}-\d{2}-\d{2}$/.test(o.e)&&o.e>o.d)ev.e=o.e;
       if(o.c>1&&o.c<=DIARY_COLORS.length)ev.c=o.c;
+      if(fOf(o))ev.f=fOf(o);
       monthRow(o.d.slice(0,7),true).ev.push(ev);
     });
+    tag.forEach(o=>{have.get('t'+o.i).f=fOf(o)});
     st.textContent='저장하는 중…';
     await save();drawHome();
-    st.textContent='완료 · 일정 '+add.length+'개를 가져왔어요';
+    st.textContent='완료 · '+(add.length?'새 일정 '+add.length+'개':'')+(add.length&&tag.length?', ':'')+(tag.length?'음식 표시 '+tag.length+'개 갱신':'');
   }catch(e){console.warn(e);st.textContent='가져오지 못했어요. 타임트리에서 받은 파일이 맞는지 확인해 주세요'}
 }
 $('setDiaryImp').onclick=()=>$('diaryFile').click();
 $('diaryFile').onchange=e=>{const f=e.target.files[0];e.target.value='';if(f)importDiary(f)};
+
+/* 오늘 뭐 먹지?: 일정에 적어 둔 식사 기록(음식 단어)을 세어서, 자주 먹고 요즘 덜 먹은 것을 더 잘 나오게 룰렛으로 골라 줘요 */
+// 음식 단어 사전 (일반 음식 이름과 체인점 이름만). 위에서부터 먼저 맞는 종류로 분류
+const FOOD_CATS=[
+  {n:'치킨',e:'🍗',re:/치킨|닭강정|닭갈비|통닭|치맥|맛초킹|네네|교촌|굽네|bhc|bbq|오꾸닭|크크크|후참|구운닭|바른치킨|훌랄라|맘스터치|꺼구리|처갓집|페리카나|호식이|푸라닭/i},
+  {n:'마라탕',e:'🥘',re:/마라|훠궈/},
+  {n:'떡볶이·분식',e:'🌶️',re:/떡볶이|핫볶이|엽기|죠스|신전|스쿨푸드|분식|김밥|순대|튀김|어묵|오뎅|핫도그|회오리감자|닭꼬치/},
+  {n:'햄버거',e:'🍔',re:/맥도날드|맥모닝|롯데리아|버거|파이브가이즈|kfc|쉐이크쉑|맥날/i},
+  {n:'샌드위치·샐러드',e:'🥗',re:/서브웨이|샌드위치|샐러드|포케|토스트|이삭/},
+  {n:'피자',e:'🍕',re:/피자|도미노|파파존스/},
+  {n:'돈까스',e:'🍛',re:/돈까스|돈가스|돈카츠|돈까쓰|가츠|카츠/},
+  {n:'중식',e:'🥡',re:/짬뽕|짜장|반점|탕수육|중화|딤섬|중국집|꿔바로우|양꼬치/},
+  {n:'국수·면',e:'🍜',re:/국수|칼국수|냉면|막국수|소바|냉모밀|우동|라멘|쌀국수|수제비|밀면|비빔면/},
+  {n:'족발·보쌈',e:'🐖',re:/족발|보쌈/},
+  {n:'고기·구이',e:'🥩',re:/삼겹|목살|냉삼|곱창|막창|갈비|불백|오리|고기(?!리)|숯불|구이|대패|차돌|한우|소고기|항정|돼지|닭도리|닭볶음|찜닭/},
+  {n:'찌개·탕',e:'🍲',re:/찌개|부대|순두부|국밥|삼계탕|감자탕|설렁탕|곰탕|해장|전골|샤브|매운탕|두부조림|탕$/},
+  {n:'양식·뷔페',e:'🍝',re:/빕스|아웃백|에슐리|뷔페|파스타|스테이크|레스토랑|브런치|리조또|오므라이스|함박|타코/},
+  {n:'일식',e:'🍣',re:/초밥|사시미|스시혼|스시로|스시야|회집|횟집|오마카세|이자카야|텐동|규동/},
+  {n:'한식',e:'🍚',re:/한식|백반|비빔밥|밥집|식당|돌솥|쌈밥|정식|가정식|죽\b|밥/},
+  {n:'빵·디저트',e:'🥐',re:/베이글|빵|도넛|도나스|마카롱|케익|케이크|요아정|요거트|베스킨|아이스크림|와플|붕어빵|호떡|디저트|파리바게|뚜레쥬르|성심당|꽈배기|노티드/},
+  {n:'카페',e:'☕',re:/커피|스타벅스|메가|이디야|컴포즈|카페|투썸|공차|빽다방|할리스|슬러시|음료/}
+];
+const FOOD_META={'단골집':'🏠'};FOOD_CATS.forEach(c=>FOOD_META[c.n]=c.e);
+// 음식이 아닌 게 확실한 말 (건강·종교·근무·학원·행사 등)
+const FOOD_NON=/병원|의원|한방|내과|소아과|안과|정형|이비인후|신경|치과|약국|처방|교회|기도|예배|성경|대근|근무|연차|업무|출근|회의|운동|런닝|생리|열남|구토|기침|두통|증상|학원|어린이집|얼집|유치원|미술|영화|노래방|피시방|만화|엔진오일|탁송|주차|교통사고|세차|수리|택배|이사|청소|제사|장례|결혼식/;
+// 일정 하나가 어떤 종류의 식사인지. 가져온 파일에 표시(f)가 있으면 그걸 먼저 따르고('-'는 음식 아님), 없으면 단어 사전으로 판단
+function foodCat(ev){
+  if(ev.f)return ev.f==='-'?'':ev.f;
+  const x=String(ev.x||'');
+  if(!x||/^[\d\s:.,]+$/.test(x)||FOOD_NON.test(x))return '';
+  for(const c of FOOD_CATS)if(c.re.test(x))return c.n;
+  return '';
+}
+function cleanFood(x){
+  let s=String(x).replace(/\d[\d,]*\s*원/g,' ').replace(/\s(먹음|삼|포장|배달|시킴)(?=\s|$)/g,' ').replace(/^(점심|저녁|아침|오전|오후|등교전)\s*/,'').replace(/\s+/g,' ').trim();
+  const p=s.split(' ');
+  if(p.length>1&&p[0].length<=3&&!FOOD_CATS.some(c=>c.re.test(p[0])))s=p.slice(1).join(' '); // 앞에 붙은 사람·동네 이름 떼기
+  s=s.replace(/\s\S{1,5}점$/,'');                                                          // 지점 이름 떼기 (맥도날드 보라점 → 맥도날드)
+  return s.slice(0,16);
+}
+function foodStats(){
+  const now=Date.now(),cats={};
+  db.diary.forEach(r=>r.ev.forEach(ev=>{
+    const c=foodCat(ev);if(!c)return;
+    const t=Date.parse(ev.d+'T00:00:00');if(!(t<=now))return; // 앞으로의 일정은 세지 않음
+    const age=(now-t)/864e5;
+    const o=cats[c]||(cats[c]={n:c,cnt:0,y1:0,w:0,last:'',names:{}});
+    o.cnt++;if(age<=365)o.y1++;o.w+=Math.exp(-age/540);if(ev.d>o.last)o.last=ev.d;
+    const k=cleanFood(ev.x);
+    if(k&&k!==c){const key=k.replace(/\s/g,'');const o2=o.names[key]||(o.names[key]={t:k,n:0});o2.n++} // 띄어쓰기만 다른 이름은 같은 곳으로
+  }));
+  return cats;
+}
+function foodWeight(c){
+  const days=Math.floor((Date.now()-Date.parse(c.last+'T00:00:00'))/864e5);
+  const pen=days<=2?.15:days<=6?.5:1;               // 방금 먹은 건 덜 나오게
+  return (Math.pow(c.w,.7)+.2)*pen;                  // 한 가지가 너무 자주 나오지 않게 완만하게
+}
+const fdOff=()=>{try{const a=JSON.parse(localStorage.getItem('fam_food_off_v1')||'null');return Array.isArray(a)?a:['카페']}catch(e){return ['카페']}};
+const fdSetOff=a=>{try{localStorage.setItem('fam_food_off_v1',JSON.stringify(a))}catch(e){}};
+let fdBusy=false,fdPick=null;
+function drawFoodChips(){
+  const st=foodStats(),off=fdOff(),box=$('fdChips');
+  const list=Object.values(st).sort((a,b)=>b.cnt-a.cnt);
+  box.innerHTML=list.map(c=>'<button type="button" class="chip'+(off.includes(c.n)?'':' on')+'" data-n="'+esc(c.n)+'">'+(FOOD_META[c.n]||'🍽️')+' '+esc(c.n)+' '+c.cnt+'</button>').join('')||'<span class="wmeta">아직 먹은 기록이 없어요</span>';
+}
+$('fdChips').onclick=e=>{
+  const b=e.target.closest('.chip');if(!b)return;
+  const n=b.dataset.n,off=fdOff(),i=off.indexOf(n);
+  if(i>=0)off.splice(i,1);else off.push(n);
+  fdSetOff(off);drawFoodChips();
+};
+function showFood(c,final){
+  $('fdEmoji').textContent=FOOD_META[c.n]||'🍽️';$('fdName').textContent=c.n;
+  $('fdSub').textContent='';
+  if(!final)return;
+  const all=Object.values(c.names).sort((a,b)=>b.n-a.n);
+  let top=all.filter(x=>x.n>=2).slice(0,2);if(!top.length)top=all.slice(0,1); // 두 번 이상 간 곳만, 없으면 가장 많은 한 곳
+  top=top.map(x=>x.t);
+  const d=new Date(c.last+'T00:00:00');
+  $('fdSub').textContent='최근 1년 '+c.y1+'번 · 마지막 '+(d.getMonth()+1)+'/'+d.getDate()+(top.length?' · 자주 가신 곳: '+top.join(', '):'');
+}
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+async function spinFood(){
+  if(fdBusy)return;
+  const off=fdOff(),list=Object.values(foodStats()).filter(c=>!off.includes(c.n));
+  if(list.length<2){showFood({n:'먹은 기록이 아직 적어요'},false);$('fdEmoji').textContent='🍽️';return}
+  fdBusy=true;$('fdGo').disabled=true;$('fdActs').hidden=true;$('fdReel').classList.add('spin');
+  // 가중치로 한 가지 고르기
+  const ws=list.map(foodWeight),tot=ws.reduce((a,b)=>a+b,0);let r=Math.random()*tot,pick=list[list.length-1];
+  for(let i=0;i<list.length;i++){r-=ws[i];if(r<=0){pick=list[i];break}}
+  const steps=24;let prev=null;
+  for(let i=0;i<steps;i++){
+    let c=pick;
+    if(i<steps-1){do{c=list[Math.floor(Math.random()*list.length)]}while(c===prev&&list.length>2)}
+    showFood(c,false);prev=c;await sleep(40+i*i*.5);
+  }
+  showFood(pick,true);fdPick=pick;
+  $('fdReel').classList.remove('spin');$('fdGo').textContent='다시 돌리기';$('fdGo').disabled=false;$('fdActs').hidden=false;
+  $('fdWrite').disabled=false;$('fdWrite').textContent='오늘 일정에 적기';
+  fdBusy=false;
+}
+$('fdGo').onclick=spinFood;
+$('fdWrite').onclick=async()=>{
+  if(!fdPick)return;
+  const ev={i:newEvId(),d:today(),x:fdPick.n},c=myColor();if(c>1)ev.c=c;
+  monthRow(ev.d.slice(0,7),true).ev.push(ev);
+  $('fdWrite').disabled=true;$('fdWrite').textContent='적었어요 ✓';
+  await save();drawFoodChips();
+};
+$('goFood').onclick=()=>{fdPick=null;$('fdActs').hidden=true;$('fdGo').textContent='돌리기!';$('fdGo').disabled=false;
+  $('fdEmoji').textContent='🍽️';$('fdName').textContent='오늘 뭐 먹을까요?';$('fdSub').textContent='';drawFoodChips();$('foodScreen').hidden=false};
+$('fdBack').onclick=()=>{if(fdBusy)return;$('foodScreen').hidden=true;drawHome()};
 
 /* 시작 */
 (async function(){
