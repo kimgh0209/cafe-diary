@@ -107,8 +107,18 @@ body.trip .ibtn{color:var(--trip)}
 .shopitem.done .tx{color:var(--muted);text-decoration:line-through}
 .shopitem .by{flex:none;font-size:11px;color:var(--muted)}
 .shopitem .rm{flex:none;border:0;background:none;color:var(--muted);font-size:18px;cursor:pointer;padding:4px 6px}
+.shoptop{flex:none;padding:10px max(16px,env(safe-area-inset-right,0px)) 12px max(16px,env(safe-area-inset-left,0px));border-bottom:1px solid var(--line);background:var(--panel)}
+.shoptop .dt{font-size:16px;font-weight:600;margin-bottom:8px}
+.shoptop .sr{display:flex;gap:8px;align-items:center}
+.shoptop .sr label{flex:none;font-size:13px;color:var(--muted)}
+.shoptop select,.dpadd select#shopCat{font:inherit;font-size:16px;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:999px;padding:8px 10px;min-width:0}
+.shoptop select{flex:1}
+.shoptop input[type=text]{flex:1;min-width:0;border-radius:999px;padding:8px 14px}
+.dpadd select#shopCat{flex:none;width:104px}
+.shopitem .dd{flex:none;font-size:11px;color:var(--muted)}
 .shophd{display:flex;align-items:center;justify-content:space-between;margin:18px 0 2px;font-size:13px;color:var(--muted)}
 .shophd:first-child{margin-top:0}
+.shophd.sub{margin:12px 0 0;font-weight:600;color:var(--fg);font-size:13px}
 .mbtn{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;width:100%;text-align:center;border:1px solid rgba(255,255,255,.28);border-radius:16px;
   background:rgba(30,22,18,.42);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);color:#fff;padding:10px 4px 8px;cursor:pointer;min-width:0}
 .mbtn .ic{flex:none;width:40px;height:40px;border-radius:12px;display:grid;place-items:center;background:var(--accent)}
@@ -706,9 +716,14 @@ body.trip .chip.on{background:var(--trip);border-color:var(--trip)}
 <div class="screen editor over" id="shopScreen" hidden>
   <div class="page">
     <div class="bar"><button class="ibtn" id="shopBack" type="button">← 닫기</button><h1>장볼 목록</h1></div>
+    <div class="shoptop">
+      <div class="dt" id="shopDate"></div>
+      <div class="sr"><label for="shopStore">장본 곳</label><select id="shopStore"></select><input type="text" id="shopStoreOther" placeholder="가게 이름" maxlength="20" autocomplete="off" hidden></div>
+    </div>
     <div class="scroll" id="shopBody"></div>
     <div class="dpadd">
-      <input type="text" id="shopAdd" placeholder="살 것 적기 (여러 개는 쉼표로)" maxlength="100" autocomplete="off" aria-label="살 것 적기">
+      <select id="shopCat" aria-label="물품 종류"></select>
+      <input type="text" id="shopAdd" placeholder="살 것, 살 것…" maxlength="100" autocomplete="off" aria-label="살 것 적기">
       <button class="btn on" id="shopAddBtn" type="button">추가</button>
     </div>
   </div>
@@ -864,7 +879,7 @@ body.trip .chip.on{background:var(--trip);border-color:var(--trip)}
 </div></nav>
 
 <script>
-const APP_VER='22';
+const APP_VER='23';
 const $=id=>document.getElementById(id);
 const ACID=[['매우 낮음','쌉쌀하고 묵직한 맛'],['낮음','고소하고 부드러운 맛'],['중간','균형 잡힌 산미'],['높음','과일처럼 상큼한 산미'],['매우 높음','레몬처럼 날카로운 산미']];
 const KIND={spot:{label:'명소',icon:'📍'},food:{label:'식당',icon:'🍽️'},cafe:{label:'카페',icon:'☕'},bakery:{label:'빵집',icon:'🥐'},lodging:{label:'숙소',icon:'🛏️'},move:{label:'교통',icon:'🚗'}};
@@ -2742,40 +2757,96 @@ $('setCycView').onclick=()=>{drawCycleScreen();$('cycleScreen').hidden=false};
 $('cycBanner').onclick=()=>{drawCycleScreen();$('cycleScreen').hidden=false};
 $('cyBack').onclick=()=>{$('cycleScreen').hidden=true};
 
-/* 장볼 목록: 항목 하나가 서버 'place' 줄 하나(id 첫 글자 g). 둘이 동시에 적어도 서로 안 덮어써요 */
+/* 장볼 목록: 항목 하나가 서버 'place' 줄 하나(id 첫 글자 g). 둘이 동시에 적어도 서로 안 덮어써요.
+   항목: {id,x,done,by,at, c(종류), st(장본 곳), bd(산 날짜)} */
+const SHOP_CATS=[['veg','🥬 채소'],['fruit','🍎 과일'],['meat','🥩 고기'],['fish','🐟 생선·해산물'],['dairy','🥛 계란·유제품'],['drink','🥤 음료'],['snack','🍪 간식'],['grain','🍚 쌀·빵·면'],['sauce','🧂 양념·소스'],['home','🧻 생활용품'],['etc','🛒 기타']];
+const SHOP_STORES=['대형마트','동네슈퍼','편의점'];
+const shCatLabel=k=>(SHOP_CATS.find(c=>c[0]===k)||SHOP_CATS[SHOP_CATS.length-1])[1];
+const ST_KEY='fam_shopstore',CAT_KEY='fam_shopcat';
+const shGet=k=>{try{return localStorage.getItem(k)||''}catch(e){return ''}},shSet=(k,v)=>{try{localStorage.setItem(k,v)}catch(e){}};
+let shopStore=shGet(ST_KEY),shopOtherOn=false;
+const shMD=s=>{const m=String(s).match(/^\d{4}-(\d\d)-(\d\d)/);return m?(+m[1])+'/'+(+m[2]):''};
+const shDay=at=>{const d=new Date(at);return isNaN(d)?today():d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')};
+const shDow=s=>DOW[new Date(+s.slice(0,4),+s.slice(5,7)-1,+s.slice(8,10)).getDay()];
+function drawShopTop(){
+  const d=new Date();
+  $('shopDate').textContent='🗓 '+d.getFullYear()+'년 '+(d.getMonth()+1)+'월 '+d.getDate()+'일 ('+DOW[d.getDay()]+')';
+  const sel=$('shopStore');
+  const extra=[...new Set(db.shop.map(s=>s.st).filter(x=>x&&!SHOP_STORES.includes(x)))];
+  if(shopStore&&!SHOP_STORES.includes(shopStore)&&!extra.includes(shopStore))extra.push(shopStore);
+  const opts=[['','어디서 사요? (선택)']].concat(SHOP_STORES.map(x=>[x,x]),extra.map(x=>[x,x]),[['__other','기타 (직접 입력)']]);
+  sel.innerHTML='';opts.forEach(([v,t])=>{const o=document.createElement('option');o.value=v;o.textContent=t;sel.appendChild(o)});
+  sel.value=shopOtherOn?'__other':shopStore;
+  if(sel.value!==(shopOtherOn?'__other':shopStore))sel.value='';
+  $('shopStoreOther').hidden=!shopOtherOn;
+}
+function drawShopCat(){
+  const sel=$('shopCat');if(sel.options.length)return;
+  SHOP_CATS.forEach(([v,t])=>{const o=document.createElement('option');o.value=v;o.textContent=t;sel.appendChild(o)});
+  sel.value=shGet(CAT_KEY)||'veg';if(!sel.value)sel.value='veg';
+}
 function drawShop(){
+  drawShopTop();drawShopCat();
   const box=$('shopBody');box.innerHTML='';
   const by=(a,b)=>String(a.at).localeCompare(String(b.at))||a.id.localeCompare(b.id);
-  const todo=db.shop.filter(s=>!s.done).sort(by),done=db.shop.filter(s=>s.done).sort(by);
-  if(!db.shop.length){box.innerHTML='<div class="empty">아직 없어요.<br>아래 칸에 살 것을 적어 보세요.<br>쉼표로 나누면 여러 개를 한 번에 적어요.</div>';return}
-  const row=s=>{
+  const todo=db.shop.filter(s=>!s.done).sort(by),done=db.shop.filter(s=>s.done);
+  if(!db.shop.length){box.innerHTML='<div class="empty">아직 없어요.<br>아래에서 종류를 고르고<br>살 것을 적어 보세요.<br>쉼표로 나누면 여러 개를 한 번에 적어요.</div>';return}
+  const hd=(html,cls)=>{const h=document.createElement('div');h.className='shophd'+(cls?' '+cls:'');h.innerHTML=html;return h};
+  const row=(s,showStore)=>{
     const d=document.createElement('div');d.className='shopitem'+(s.done?' done':'');d.dataset.i=s.id;
     const ck=document.createElement('button');ck.type='button';ck.className='ck';ck.dataset.a='ck';ck.setAttribute('aria-label',s.done?'다시 사야 해요':'샀어요');ck.textContent=s.done?'✓':'';
     const tx=document.createElement('span');tx.className='tx';tx.dataset.a='ck';tx.textContent=s.x;
     d.append(ck,tx);
     if(s.by){const b=document.createElement('span');b.className='by';b.textContent=s.by;d.appendChild(b)}
+    if(!s.done){const dd=document.createElement('span');dd.className='dd';dd.textContent=shMD(shDay(s.at));d.appendChild(dd)}
     const rm=document.createElement('button');rm.type='button';rm.className='rm';rm.dataset.a='rm';rm.setAttribute('aria-label','지우기');rm.textContent='✕';d.appendChild(rm);
     return d;
   };
-  if(todo.length){const h=document.createElement('div');h.className='shophd';h.textContent='사야 할 것 '+todo.length;box.appendChild(h);todo.forEach(s=>box.appendChild(row(s)))}
-  else{const h=document.createElement('div');h.className='shophd';h.textContent='다 샀어요! 🎉';box.appendChild(h)}
+  const esc=s=>String(s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+  if(todo.length){
+    box.appendChild(hd('사야 할 것 '+todo.length));
+    SHOP_CATS.forEach(([k,label])=>{
+      const g=todo.filter(s=>(s.c||'etc')===k||(k==='etc'&&!SHOP_CATS.some(c=>c[0]===s.c)));
+      if(!g.length)return;
+      box.appendChild(hd('<span>'+label+' '+g.length+'</span>','sub'));
+      g.forEach(s=>box.appendChild(row(s)));
+    });
+  }else box.appendChild(hd('다 샀어요! 🎉'));
   if(done.length){
-    const h=document.createElement('div');h.className='shophd';h.innerHTML='<span>산 것 '+done.length+'</span>';
+    const h=hd('<span>산 것 '+done.length+'</span>');
     const c=document.createElement('button');c.type='button';c.className='ibtn';c.dataset.a='clear';c.textContent='산 것 모두 지우기';h.appendChild(c);
-    box.appendChild(h);done.forEach(s=>box.appendChild(row(s)));
+    box.appendChild(h);
+    const key=s=>(s.bd||shDay(s.at))+'|'+(s.st||'');
+    const groups=new Map();done.forEach(s=>{const k=key(s);if(!groups.has(k))groups.set(k,[]);groups.get(k).push(s)});
+    [...groups.keys()].sort().reverse().forEach(k=>{
+      const [d,st]=k.split('|');
+      box.appendChild(hd('<span>'+shMD(d)+' ('+shDow(d)+') · '+(st?esc(st):'가게 안 적음')+' · '+groups.get(k).length+'개</span>','sub'));
+      groups.get(k).sort(by).forEach(s=>box.appendChild(row(s)));
+    });
   }
 }
 function shopAddNow(){
   const raw=$('shopAdd').value;
   const names=raw.split(/[,，\n]/).map(x=>x.trim().slice(0,60)).filter(Boolean);
   if(!names.length)return;
-  const now=Date.now(),nm=myName();
-  names.forEach((x,k)=>db.shop.push(normShop({id:'g'+(now+k).toString(36)+Math.random().toString(36).slice(2,5),x,by:nm,at:new Date(now+k).toISOString()})));
+  const now=Date.now(),nm=myName(),c=$('shopCat').value||'etc';
+  names.forEach((x,k)=>db.shop.push(normShop({id:'g'+(now+k).toString(36)+Math.random().toString(36).slice(2,5),x,c,by:nm,at:new Date(now+k).toISOString()})));
   $('shopAdd').value='';save();drawShop();notifyOthers('장볼 목록');
-  const b=$('shopBody');b.scrollTop=0;
+  $('shopBody').scrollTop=0;
 }
 $('shopAddBtn').onclick=()=>{shopAddNow();$('shopAdd').focus()};
 $('shopAdd').onkeydown=e=>{if(e.key==='Enter'&&!e.isComposing){e.preventDefault();shopAddNow()}};
+$('shopCat').onchange=()=>shSet(CAT_KEY,$('shopCat').value);
+$('shopStore').onchange=()=>{
+  const v=$('shopStore').value;
+  if(v==='__other'){shopOtherOn=true;$('shopStoreOther').hidden=false;$('shopStoreOther').value='';shopStore='';$('shopStoreOther').focus();return}
+  shopOtherOn=false;shopStore=v;shSet(ST_KEY,v);drawShopTop();
+};
+$('shopStoreOther').onchange=()=>{
+  const v=$('shopStoreOther').value.trim().slice(0,20);
+  if(v){shopStore=v;shopOtherOn=false;shSet(ST_KEY,v)}
+  drawShopTop();
+};
 $('shopBody').onclick=e=>{
   const t=e.target.closest('[data-a]');if(!t)return;
   if(t.dataset.a==='clear'){
@@ -2784,7 +2855,11 @@ $('shopBody').onclick=e=>{
     return;
   }
   const it=db.shop.find(s=>s.id===t.closest('.shopitem').dataset.i);if(!it)return;
-  if(t.dataset.a==='ck'){it.done=!it.done;save();drawShop()}
+  if(t.dataset.a==='ck'){
+    it.done=!it.done;
+    if(it.done){it.bd=today();if(shopStore)it.st=shopStore;else delete it.st}else{delete it.bd;delete it.st}
+    save();drawShop();
+  }
   else if(t.dataset.a==='rm'){db.shop=db.shop.filter(s=>s!==it);save();drawShop()}
 };
 $('goShop').onclick=()=>{drawShop();$('shopScreen').hidden=false};
