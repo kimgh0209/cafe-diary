@@ -118,6 +118,8 @@ body.trip .ibtn{color:var(--trip)}
 .shopitem .dd{flex:none;font-size:11px;color:var(--muted)}
 .shophd{display:flex;align-items:center;justify-content:space-between;margin:18px 0 2px;font-size:13px;color:var(--muted)}
 .shophd:first-child{margin-top:0}
+.shophd.day{cursor:pointer;padding:6px 0}
+.shophd.sub.day{margin-top:6px}
 .shophd.sub{margin:12px 0 0;font-weight:600;color:var(--fg);font-size:13px}
 .mbtn{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;width:100%;text-align:center;border:1px solid rgba(255,255,255,.28);border-radius:16px;
   background:rgba(30,22,18,.42);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);color:#fff;padding:10px 4px 8px;cursor:pointer;min-width:0}
@@ -879,7 +881,7 @@ body.trip .chip.on{background:var(--trip);border-color:var(--trip)}
 </div></nav>
 
 <script>
-const APP_VER='23';
+const APP_VER='24';
 const $=id=>document.getElementById(id);
 const ACID=[['매우 낮음','쌉쌀하고 묵직한 맛'],['낮음','고소하고 부드러운 맛'],['중간','균형 잡힌 산미'],['높음','과일처럼 상큼한 산미'],['매우 높음','레몬처럼 날카로운 산미']];
 const KIND={spot:{label:'명소',icon:'📍'},food:{label:'식당',icon:'🍽️'},cafe:{label:'카페',icon:'☕'},bakery:{label:'빵집',icon:'🥐'},lodging:{label:'숙소',icon:'🛏️'},move:{label:'교통',icon:'🚗'}};
@@ -2764,7 +2766,7 @@ const SHOP_STORES=['대형마트','동네슈퍼','편의점'];
 const shCatLabel=k=>(SHOP_CATS.find(c=>c[0]===k)||SHOP_CATS[SHOP_CATS.length-1])[1];
 const ST_KEY='fam_shopstore',CAT_KEY='fam_shopcat';
 const shGet=k=>{try{return localStorage.getItem(k)||''}catch(e){return ''}},shSet=(k,v)=>{try{localStorage.setItem(k,v)}catch(e){}};
-let shopStore=shGet(ST_KEY),shopOtherOn=false;
+let shopStore=shGet(ST_KEY),shopOtherOn=false,shopPastOpen=false;const shopOpenDays=new Set();
 const shMD=s=>{const m=String(s).match(/^\d{4}-(\d\d)-(\d\d)/);return m?(+m[1])+'/'+(+m[2]):''};
 const shDay=at=>{const d=new Date(at);return isNaN(d)?today():d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')};
 const shDow=s=>DOW[new Date(+s.slice(0,4),+s.slice(5,7)-1,+s.slice(8,10)).getDay()];
@@ -2812,16 +2814,32 @@ function drawShop(){
       g.forEach(s=>box.appendChild(row(s)));
     });
   }else box.appendChild(hd('다 샀어요! 🎉'));
-  if(done.length){
-    const h=hd('<span>산 것 '+done.length+'</span>');
-    const c=document.createElement('button');c.type='button';c.className='ibtn';c.dataset.a='clear';c.textContent='산 것 모두 지우기';h.appendChild(c);
+  const dayOf=s=>s.bd||shDay(s.at),td=today();
+  const doneToday=done.filter(s=>dayOf(s)>=td),past=done.filter(s=>dayOf(s)<td);
+  if(doneToday.length){
+    const h=hd('<span>오늘 산 것 '+doneToday.length+'</span>');
+    const c=document.createElement('button');c.type='button';c.className='ibtn';c.dataset.a='clear';c.textContent='오늘 산 것 지우기';h.appendChild(c);
     box.appendChild(h);
-    const key=s=>(s.bd||shDay(s.at))+'|'+(s.st||'');
-    const groups=new Map();done.forEach(s=>{const k=key(s);if(!groups.has(k))groups.set(k,[]);groups.get(k).push(s)});
-    [...groups.keys()].sort().reverse().forEach(k=>{
-      const [d,st]=k.split('|');
-      box.appendChild(hd('<span>'+shMD(d)+' ('+shDow(d)+') · '+(st?esc(st):'가게 안 적음')+' · '+groups.get(k).length+'개</span>','sub'));
-      groups.get(k).sort(by).forEach(s=>box.appendChild(row(s)));
+    const groups=new Map();doneToday.forEach(s=>{const k=s.st||'';if(!groups.has(k))groups.set(k,[]);groups.get(k).push(s)});
+    groups.forEach((g,st)=>{
+      box.appendChild(hd('<span>'+(st?esc(st):'가게 안 적음')+' · '+g.length+'개</span>','sub'));
+      g.sort(by).forEach(s=>box.appendChild(row(s)));
+    });
+  }
+  if(past.length){
+    // 날짜가 지난 산 것은 '지난 장보기'로 날짜별 목록이 되어 남아요 (안 산 것은 계속 위에 남음)
+    const days=new Map();past.forEach(s=>{const d=dayOf(s);if(!days.has(d))days.set(d,[]);days.get(d).push(s)});
+    const h=hd('<span>📚 지난 장보기 '+days.size+'번</span>');
+    const t=document.createElement('button');t.type='button';t.className='ibtn';t.dataset.a='past';t.textContent=shopPastOpen?'접기 ▲':'펼치기 ▼';h.appendChild(t);
+    box.appendChild(h);
+    if(shopPastOpen)[...days.keys()].sort().reverse().forEach(d=>{
+      const g=days.get(d),stores=[...new Set(g.map(s=>s.st).filter(Boolean))],open=shopOpenDays.has(d);
+      const hh=hd('<span>'+(open?'▼ ':'▶ ')+shMD(d)+' ('+shDow(d)+') · '+(stores.length?esc(stores.join(', '))+' · ':'')+g.length+'개</span>','sub day');
+      hh.dataset.a='day';hh.dataset.d=d;box.appendChild(hh);
+      if(open){
+        g.sort(by).forEach(s=>box.appendChild(row(s)));
+        const dl=document.createElement('button');dl.type='button';dl.className='ibtn danger';dl.dataset.a='delday';dl.dataset.d=d;dl.textContent='이 날 기록 지우기';box.appendChild(dl);
+      }
     });
   }
 }
@@ -2849,9 +2867,17 @@ $('shopStoreOther').onchange=()=>{
 };
 $('shopBody').onclick=e=>{
   const t=e.target.closest('[data-a]');if(!t)return;
+  const dayOf=s=>s.bd||shDay(s.at);
   if(t.dataset.a==='clear'){
-    const n=db.shop.filter(s=>s.done).length;
-    if(n&&confirm('산 것 '+n+'개를 목록에서 지울까요?')){db.shop=db.shop.filter(s=>!s.done);save();drawShop()}
+    const td=today(),n=db.shop.filter(s=>s.done&&dayOf(s)>=td).length;
+    if(n&&confirm('오늘 산 것 '+n+'개를 목록에서 지울까요?')){db.shop=db.shop.filter(s=>!(s.done&&dayOf(s)>=td));save();drawShop()}
+    return;
+  }
+  if(t.dataset.a==='past'){shopPastOpen=!shopPastOpen;drawShop();return}
+  if(t.dataset.a==='day'){const d=t.dataset.d;shopOpenDays.has(d)?shopOpenDays.delete(d):shopOpenDays.add(d);drawShop();return}
+  if(t.dataset.a==='delday'){
+    const d=t.dataset.d,n=db.shop.filter(s=>s.done&&dayOf(s)===d).length;
+    if(n&&confirm(shMD(d)+' 기록 '+n+'개를 지울까요? 되돌릴 수 없어요.')){db.shop=db.shop.filter(s=>!(s.done&&dayOf(s)===d));shopOpenDays.delete(d);save();drawShop()}
     return;
   }
   const it=db.shop.find(s=>s.id===t.closest('.shopitem').dataset.i);if(!it)return;
