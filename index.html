@@ -13,6 +13,8 @@
 <title>우리가족기록♡</title>
 <script src="config.js?v=9"></script>
 <script src="https://unpkg.com/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Jua&display=swap">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css">
@@ -92,6 +94,10 @@ body.trip .ibtn{color:var(--trip)}
   padding:calc(18px + env(safe-area-inset-top,0px)) max(20px,env(safe-area-inset-right,0px)) calc(28px + env(safe-area-inset-bottom,0px)) max(20px,env(safe-area-inset-left,0px))}
 .home .top{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
 .home h1{margin:0;font-size:26px;letter-spacing:-.01em;text-shadow:0 2px 12px rgba(0,0,0,.45)}
+.home .ttlbox{flex:1;min-width:0;text-align:center}
+.home h1.ttl{font-family:'Jua','Apple SD Gothic Neo','Malgun Gothic',var(--font,sans-serif);font-weight:400;font-size:30px;letter-spacing:.02em;white-space:nowrap;line-height:1.2;text-shadow:none}
+.home h1.ttl span{color:var(--c);-webkit-text-stroke:1.2px rgba(255,255,255,.9);paint-order:stroke fill;text-shadow:0 2px 6px rgba(0,0,0,.35)}
+.home.light h1.ttl span{-webkit-text-stroke:1.2px rgba(60,40,30,.55);text-shadow:none}
 .home .date{font-size:13px;opacity:.85;text-shadow:0 1px 6px rgba(0,0,0,.5)}
 .home .cam{flex:none;width:40px;height:40px;border-radius:50%;border:0;background:rgba(0,0,0,.35);color:#fff;display:grid;place-items:center;cursor:pointer;
   backdrop-filter:blur(6px)}
@@ -566,7 +572,7 @@ body.trip .chip.on{background:var(--trip);border-color:var(--trip)}
   <input type="file" id="homeFile" accept="image/*" hidden>
   <div class="inner">
     <div class="top">
-      <div><h1>우리가족기록♡</h1><div class="date" id="homeDate"></div>
+      <div class="ttlbox"><h1 class="ttl" aria-label="우리가족기록♡"><span style="--c:#ff4d5e" aria-hidden="true">우</span><span style="--c:#ff9a2e" aria-hidden="true">리</span><span style="--c:#ffd21f" aria-hidden="true">가</span><span style="--c:#4cd36b" aria-hidden="true">족</span><span style="--c:#3db8ff" aria-hidden="true">기</span><span style="--c:#7a7bff" aria-hidden="true">록</span><span style="--c:#d36bff" aria-hidden="true">♡</span></h1><div class="date" id="homeDate"></div>
         <button class="dd" id="ddPill" type="button" hidden aria-label="기념일 보기"><span id="ddName"></span><b id="ddVal"></b></button>
         <button class="memory" id="homeMemory" type="button" hidden><span>📅</span><span class="y"></span><span class="t"></span></button>
         <button class="memory" id="goFood" type="button">🎲 오늘 뭐 먹지?</button></div>
@@ -881,7 +887,7 @@ body.trip .chip.on{background:var(--trip);border-color:var(--trip)}
 </div></nav>
 
 <script>
-const APP_VER='24';
+const APP_VER='25';
 const $=id=>document.getElementById(id);
 const ACID=[['매우 낮음','쌉쌀하고 묵직한 맛'],['낮음','고소하고 부드러운 맛'],['중간','균형 잡힌 산미'],['높음','과일처럼 상큼한 산미'],['매우 높음','레몬처럼 날카로운 산미']];
 const KIND={spot:{label:'명소',icon:'📍'},food:{label:'식당',icon:'🍽️'},cafe:{label:'카페',icon:'☕'},bakery:{label:'빵집',icon:'🥐'},lodging:{label:'숙소',icon:'🛏️'},move:{label:'교통',icon:'🚗'}};
