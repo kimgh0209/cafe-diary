@@ -837,7 +837,7 @@ body.trip .chip.on{background:var(--trip);border-color:var(--trip)}
 </div></nav>
 
 <script>
-const APP_VER='19';
+const APP_VER='20';
 const $=id=>document.getElementById(id);
 const ACID=[['매우 낮음','쌉쌀하고 묵직한 맛'],['낮음','고소하고 부드러운 맛'],['중간','균형 잡힌 산미'],['높음','과일처럼 상큼한 산미'],['매우 높음','레몬처럼 날카로운 산미']];
 const KIND={spot:{label:'명소',icon:'📍'},food:{label:'식당',icon:'🍽️'},cafe:{label:'카페',icon:'☕'},bakery:{label:'빵집',icon:'🥐'},lodging:{label:'숙소',icon:'🛏️'},move:{label:'교통',icon:'🚗'}};
@@ -2602,7 +2602,7 @@ window.addEventListener('pagehide',flushNotify);
 /* 생리주기 추정 (달력 방식). 기록한 '시작일'로 평균 주기를 구해 다음 시작·예민한 시기·배란 예상을 계산해요.
    달력 기록으로 하는 대략적인 추정이라 건강 판단(피임·임신 등)에는 쓰지 마세요. */
 // ==CYCLE-START==
-const CYC_RE=/생리|월경/;
+const CYC_RE=/(생리|월경)(?!\s*(끝|종료|통|대|용품|휴가|불순|약|주기))/; // '생리 끝', '생리통', '생리대' 같은 말은 시작일로 세지 않음
 const cycKey=ev=>ev.k==='cyc'||(ev.k!=='-'&&CYC_RE.test(String(ev.x||'')));
 const dNum=s=>Math.round(Date.UTC(+s.slice(0,4),+s.slice(5,7)-1,+s.slice(8,10))/864e5);
 const dAdd=(s,n)=>{const d=new Date((dNum(s)+n)*864e5);return d.getUTCFullYear()+'-'+String(d.getUTCMonth()+1).padStart(2,'0')+'-'+String(d.getUTCDate()).padStart(2,'0')};
