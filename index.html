@@ -753,7 +753,7 @@ body.trip .chip.on{background:var(--trip);border-color:var(--trip)}
         <div><label class="lbl">색</label><div class="dcolors" id="dColors"></div></div>
         <div><label class="lbl">사진 (선택)</label><div class="photos" id="dPhotos"></div><input type="file" id="dFile" accept="image/*" multiple hidden></div>
         <label class="lbl" id="dCycBox" style="display:flex;gap:8px;align-items:center;font-size:14px;color:var(--fg);letter-spacing:0"><input type="checkbox" id="dCyc" style="width:18px;height:18px;margin:0"> 🌸 생리 시작일로 기록 (주기 계산에 써요)</label>
-        <label class="lbl" id="dQuietBox" style="display:flex;gap:8px;align-items:center;font-size:14px;color:var(--fg);letter-spacing:0"><input type="checkbox" id="dQuiet" style="width:18px;height:18px;margin:0"> 이번 일정은 상대에게 알리지 않기</label>
+        <label class="lbl" id="dQuietBox" style="display:flex;gap:8px;align-items:center;font-size:14px;color:var(--fg);letter-spacing:0"><input type="checkbox" id="dQuiet" style="width:18px;height:18px;margin:0"> 이 일정은 숨기기 (상대 알림·캘린더 구독에 안 나와요)</label>
         <div class="actions"><button class="btn on" id="dSave" type="button">저장</button><button class="ibtn danger" id="dDel" type="button" hidden>삭제</button></div>
       </section>
     </div>
@@ -837,7 +837,7 @@ body.trip .chip.on{background:var(--trip);border-color:var(--trip)}
 </div></nav>
 
 <script>
-const APP_VER='20';
+const APP_VER='21';
 const $=id=>document.getElementById(id);
 const ACID=[['매우 낮음','쌉쌀하고 묵직한 맛'],['낮음','고소하고 부드러운 맛'],['중간','균형 잡힌 산미'],['높음','과일처럼 상큼한 산미'],['매우 높음','레몬처럼 날카로운 산미']];
 const KIND={spot:{label:'명소',icon:'📍'},food:{label:'식당',icon:'🍽️'},cafe:{label:'카페',icon:'☕'},bakery:{label:'빵집',icon:'🥐'},lodging:{label:'숙소',icon:'🛏️'},move:{label:'교통',icon:'🚗'}};
@@ -2230,7 +2230,7 @@ function drawDay(){
   $('dText').value=v.x||'';$('dDate').value=v.d||daySel;$('dTime').value=v.t||'';$('dEnd').value=v.e||'';
   dayColor=v.c||1;drawDayColors();
   $('dDel').hidden=!ev;
-  $('dQuietBox').hidden=!!ev;$('dQuiet').checked=false;
+  $('dQuietBox').hidden=false;$('dQuiet').checked=!!(ev&&ev.q);
   $('dCyc').checked=ev?cycKey(ev):false;
   if(ev)armDelete($('dDel'),()=>{
     const row=monthRow(ev.d.slice(0,7));
@@ -2259,6 +2259,7 @@ async function saveDay(){
   if(e)ev.e=e;else delete ev.e;
   if(dayColor>1)ev.c=dayColor;else delete ev.c;
   if($('dCyc').checked)ev.k='cyc';else if(CYC_RE.test(ev.x))ev.k='-';else delete ev.k;
+  if(quiet)ev.q=1;else delete ev.q;   // 숨긴 일정: 상대 알림과 캘린더 구독에서 뺌
   const photos=dayEd?(dayEd.p||[]):dayDraft.p;
   if(photos.length)ev.p=photos;else delete ev.p;
   const ym=d.slice(0,7);
