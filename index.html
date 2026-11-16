@@ -309,17 +309,30 @@ body.trip .chip.on{background:var(--trip);border-color:var(--trip)}
 .chiprow::-webkit-scrollbar{display:none}
 .wmeta{font-size:12px;color:var(--muted)}
 .mbtn.diary .ic{background:#d4a017}
-.dow{display:grid;grid-template-columns:repeat(7,1fr);text-align:center;font-size:12px;color:var(--muted);padding:6px 0;border-bottom:1px solid var(--line);flex:none}
+.dymain{flex:1;min-height:0;display:flex;flex-direction:column}
+.dymain[hidden]{display:none}
+.cal{flex:none;margin:10px 10px 0;background:var(--bg);border:1px solid var(--line);border-radius:18px;padding:4px 6px 8px}
+.dow{display:grid;grid-template-columns:repeat(7,1fr);text-align:center;font-size:12px;color:var(--muted);padding:6px 0 2px}
 .dow span:first-child{color:#d6564a}.dow span:last-child{color:#3b82c4}
-.dgrid{display:grid;grid-template-columns:repeat(7,1fr);padding-bottom:calc(16px + env(safe-area-inset-bottom,0px))}
-.dcell{min-height:92px;border-right:1px solid var(--line);border-bottom:1px solid var(--line);padding:2px 2px 3px;overflow:hidden;cursor:pointer;min-width:0}
-.dcell:nth-child(7n){border-right:0}
-.dcell.out{opacity:.4}
-.dcell .dn{font-size:12px;width:20px;height:20px;line-height:20px;text-align:center;border-radius:50%;margin:1px auto 2px}
-.dcell.sun .dn{color:#d6564a}.dcell.sat .dn{color:#3b82c4}
-.dcell.today .dn{background:var(--accent);color:#fff}
-.de{font-size:10px;line-height:14px;border-radius:3px;padding:0 3px;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.dm{font-size:10px;color:var(--muted);text-align:center}
+.dgrid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px 0}
+.dc{border:0;background:none;padding:3px 0 4px;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;min-width:0;color:var(--fg);font:inherit}
+.dc .dnum{width:28px;height:28px;line-height:28px;text-align:center;border-radius:50%;font-size:14px}
+.dc.out{opacity:.35}
+.dc.sun .dnum{color:#d6564a}.dc.sat .dnum{color:#3b82c4}
+.dc.today .dnum{box-shadow:inset 0 0 0 1.5px var(--accent);font-weight:700}
+.dc.sel .dnum{background:var(--accent);color:#fff;box-shadow:none}
+.dc .dots{display:flex;gap:3px;height:6px;justify-content:center}
+.dc .dots i{width:6px;height:6px;border-radius:50%}
+.dpanel{flex:1;min-height:0;display:flex;flex-direction:column;padding:12px 14px 0}
+.dphead{display:flex;justify-content:space-between;align-items:baseline;font-size:16px;font-weight:600}
+.dphead span{font-size:12px;color:var(--muted);font-weight:400}
+.dplist{flex:1;overflow-y:auto;padding:8px 0;-webkit-overflow-scrolling:touch}
+.nrow{display:flex;align-items:center;gap:10px;width:100%;text-align:left;background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:10px 12px 10px 0;margin-bottom:8px;cursor:pointer;overflow:hidden}
+.nrow b{width:5px;align-self:stretch;border-radius:0 3px 3px 0;flex:none}
+.nrow .nx{flex:1;min-width:0;overflow-wrap:anywhere}
+.nrow .nm{flex:none;font-size:12px;color:var(--muted)}
+.dpadd{flex:none;display:flex;gap:8px;align-items:center;padding:8px 12px calc(10px + env(safe-area-inset-bottom,0px));border-top:1px solid var(--line);background:var(--panel)}
+.dpadd input{flex:1;min-width:0;border-radius:999px;padding:9px 14px}
 .drow{display:flex;gap:10px;align-items:center;width:100%;text-align:left;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-bottom:8px;cursor:pointer}
 .drow i{width:10px;height:10px;border-radius:50%;flex:none}
 .drow .tm{color:var(--muted);font-size:13px;flex:none;font-variant-numeric:tabular-nums}
@@ -555,6 +568,10 @@ body.trip .chip.on{background:var(--trip);border-color:var(--trip)}
         <div class="sl"><b>휴지통</b><span id="setTrashState"></span></div>
         <div class="setgrp"><button class="btn" id="setTrash" type="button">열기</button></div>
       </div>
+      <div class="setrow" style="flex-wrap:wrap">
+        <div class="sl"><b>내 기본 색</b><span>이 폰에서 새로 적는 일정의 색이에요</span></div>
+        <div class="dcolors" id="setMyColors" style="width:100%"></div>
+      </div>
       <div class="setrow">
         <div class="sl"><b>타임트리 일정 가져오기</b><span id="setDiaryState">받아 둔 파일(.json)을 골라 주세요</span></div>
         <div class="setgrp"><button class="btn" id="setDiaryImp" type="button">파일 고르기</button><input type="file" id="diaryFile" accept=".json,application/json" hidden></div>
@@ -648,9 +665,20 @@ body.trip .chip.on{background:var(--trip);border-color:var(--trip)}
       <div class="filters"><input type="search" id="dyQ" placeholder="일정 검색 (예: 병원)" autocomplete="off"></div>
       <div class="scroll" id="dyRes"></div>
     </div>
-    <div id="dyGridWrap" style="flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch">
-      <div class="dow"><span>일</span><span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span>토</span></div>
-      <div class="dgrid" id="dyGrid"></div>
+    <div id="dyMain" class="dymain">
+      <div class="cal" id="dyCal">
+        <div class="dow"><span>일</span><span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span>토</span></div>
+        <div class="dgrid" id="dyGrid"></div>
+      </div>
+      <div class="dpanel">
+        <div class="dphead"><span style="font-size:16px;color:var(--fg);font-weight:600" id="dpTitle"></span><span id="dpCount"></span></div>
+        <div class="dplist" id="dyList"></div>
+      </div>
+      <div class="dpadd">
+        <input type="text" id="dyAdd" placeholder="한 줄 적기" maxlength="200" autocomplete="off" aria-label="일정 한 줄 적기">
+        <button class="btn on" id="dyAddBtn" type="button">추가</button>
+        <button class="btn" id="dyMore" type="button">자세히</button>
+      </div>
     </div>
   </div>
 </div>
@@ -658,7 +686,6 @@ body.trip .chip.on{background:var(--trip);border-color:var(--trip)}
   <div class="page">
     <div class="bar"><button class="ibtn" id="dBack" type="button">← 닫기</button><h1 id="dHead"></h1></div>
     <div class="scroll">
-      <div id="dList"></div>
       <section class="sec">
         <h2><span id="dFormTitle">새로 적기</span></h2>
         <div><label class="lbl" for="dText">내용</label><input type="text" id="dText" placeholder="한 일을 짧게 적어요" maxlength="200" autocomplete="off"></div>
@@ -669,7 +696,7 @@ body.trip .chip.on{background:var(--trip);border-color:var(--trip)}
         <div><label class="lbl" for="dEnd">끝나는 날 (며칠 이어질 때만)</label><input type="date" id="dEnd"></div>
         <div><label class="lbl">색</label><div class="dcolors" id="dColors"></div></div>
         <div><label class="lbl">사진 (선택)</label><div class="photos" id="dPhotos"></div><input type="file" id="dFile" accept="image/*" multiple hidden></div>
-        <div class="actions"><button class="btn on" id="dSave" type="button">저장</button><button class="btn" id="dCancel" type="button" hidden>새로 쓰기</button><button class="ibtn danger" id="dDel" type="button" hidden>삭제</button></div>
+        <div class="actions"><button class="btn on" id="dSave" type="button">저장</button><button class="ibtn danger" id="dDel" type="button" hidden>삭제</button></div>
       </section>
     </div>
   </div>
@@ -719,7 +746,7 @@ body.trip .chip.on{background:var(--trip);border-color:var(--trip)}
 </div></nav>
 
 <script>
-const APP_VER='14';
+const APP_VER='15';
 const $=id=>document.getElementById(id);
 const ACID=[['매우 낮음','쌉쌀하고 묵직한 맛'],['낮음','고소하고 부드러운 맛'],['중간','균형 잡힌 산미'],['높음','과일처럼 상큼한 산미'],['매우 높음','레몬처럼 날카로운 산미']];
 const KIND={spot:{label:'명소',icon:'📍'},food:{label:'식당',icon:'🍽️'},cafe:{label:'카페',icon:'☕'},bakery:{label:'빵집',icon:'🥐'},lodging:{label:'숙소',icon:'🛏️'},move:{label:'교통',icon:'🚗'}};
@@ -1611,6 +1638,7 @@ function drawSettings(){
   $('setPinOn').hidden=on;$('setPinChange').hidden=!on;$('setPinOff').hidden=!on;
   $('appVer').textContent='앱 버전 '+APP_VER;
   $('setTrashState').textContent=db.trash.length?db.trash.length+'개 · 30일 뒤 자동으로 지워져요':'비어 있어요';
+  drawMyColors();
   showPhotoUsage();
   idb.get('uploads').then(q=>{const n=(q||[]).length;$('setPhotoState').textContent=n?'서버에 올리는 중 '+n+'장 (연결되면 자동으로 올라가요)':'모두 서버에 보관 중'}).catch(()=>{});
 }
@@ -1982,14 +2010,13 @@ $('setPhotoClean').onclick=async()=>{
   finally{btn.disabled=false}
 };
 
-/* 일정 메모: 타임트리처럼 날짜별로 짧게 적는 기록. 한 달을 한 줄(id 'm2026-11')로 묶어 저장하고 가족과 공유해요 */
+/* 일정 메모: 달력에는 점으로만 표시하고, 고른 날의 기록은 아래 목록에 보여요. 한 달을 한 줄(id 'm2026-11')로 묶어 저장하고 가족과 공유해요 */
 const DIARY_COLORS=['#2ecc87','#3dc2c8','#47b2f7','#948078','#212121','#e73b3b','#f35f8c','#fb7f77','#fdc02d','#b38bdc'];
 const pad2=n=>String(n).padStart(2,'0');
 const fmtD=d=>d.getFullYear()+'-'+pad2(d.getMonth()+1)+'-'+pad2(d.getDate());
 const nextDay=s=>{const d=new Date(s+'T00:00:00');d.setDate(d.getDate()+1);return fmtD(d)};
 const evColor=ev=>DIARY_COLORS[(ev.c||1)-1]||DIARY_COLORS[0];
-const evInk=hex=>{const n=parseInt(hex.slice(1),16),l=.299*(n>>16)+.587*((n>>8)&255)+.114*(n&255);return l>170?'#222':'#fff'};
-const cmpEv=(a,b)=>(a.t?1:0)-(b.t?1:0)||(a.t||'').localeCompare(b.t||'')||String(a.x).localeCompare(String(b.x));
+const cmpEv=(a,b)=>(a.t?1:0)-(b.t?1:0)||(a.t||'').localeCompare(b.t||''); // 시간 없는 것은 적은 순서 그대로
 function monthRow(ym,create){
   let r=db.diary.find(x=>x.id==='m'+ym);
   if(!r&&create){r=normDiary({id:'m'+ym,ym});db.diary.push(r)}
@@ -2009,10 +2036,21 @@ function evsBetween(a,b){
   return map;
 }
 
-let dyMonth=new Date(),dySearchOn=false,daySel='',dayEd=null,dayDraft=null,dayColor=1;
+/* 내 기본 색: 이 폰에서 새로 적는 일정의 색 (폰마다 따로 정해요) */
+const MYCOLOR_KEY='fam_mycolor_v1';
+const myColor=()=>{try{const n=+localStorage.getItem(MYCOLOR_KEY);return n>=1&&n<=DIARY_COLORS.length?n:1}catch(e){return 1}};
+function drawMyColors(){
+  const box=$('setMyColors');if(!box)return;const c=myColor();
+  box.innerHTML=DIARY_COLORS.map((h,i)=>'<button type="button" data-c="'+(i+1)+'" aria-label="색 '+(i+1)+'" style="background:'+h+'"'+(c===i+1?' class="on"':'')+'></button>').join('');
+}
+$('setMyColors').onclick=e=>{const b=e.target.closest('button');if(!b)return;try{localStorage.setItem(MYCOLOR_KEY,b.dataset.c)}catch(err){}drawMyColors()};
+
+let dyMonth=new Date(),dySel='',dySearchOn=false,daySel='',dayEd=null,dayDraft=null,dayColor=1;
 dyMonth.setDate(1);
+function selectDay(d){dySel=d;dyMonth=new Date(+d.slice(0,4),+d.slice(5,7)-1,1)}
 function drawDiary(){
-  const y=dyMonth.getFullYear(),m=dyMonth.getMonth();
+  const y=dyMonth.getFullYear(),m=dyMonth.getMonth(),ym=y+'-'+pad2(m+1);
+  if(dySel.slice(0,7)!==ym)dySel=today().slice(0,7)===ym?today():ym+'-01';
   $('dyTitle').textContent=y+'년 '+(m+1)+'월';
   const first=new Date(y,m,1),days=new Date(y,m+1,0).getDate(),weeks=Math.ceil((first.getDay()+days)/7);
   const start=new Date(y,m,1-first.getDay()),cells=[];
@@ -2020,24 +2058,48 @@ function drawDiary(){
   const map=evsBetween(fmtD(cells[0]),fmtD(cells[cells.length-1])),tdy=today();
   $('dyGrid').innerHTML=cells.map(d=>{
     const ds=fmtD(d),list=map[ds]||[],dow=d.getDay();
-    const cls='dcell'+(d.getMonth()!==m?' out':'')+(dow===0?' sun':dow===6?' sat':'')+(ds===tdy?' today':'');
-    return '<div class="'+cls+'" data-d="'+ds+'"><div class="dn">'+d.getDate()+'</div>'
-      +list.slice(0,3).map(ev=>{const c=evColor(ev);return '<div class="de" style="background:'+c+';color:'+evInk(c)+'">'+esc(ev.x)+'</div>'}).join('')
-      +(list.length>3?'<div class="dm">+'+(list.length-3)+'</div>':'')+'</div>';
+    const cls='dc'+(d.getMonth()!==m?' out':'')+(dow===0?' sun':dow===6?' sat':'')+(ds===tdy?' today':'')+(ds===dySel?' sel':'');
+    return '<button type="button" class="'+cls+'" data-d="'+ds+'"><span class="dnum">'+d.getDate()+'</span><span class="dots">'
+      +list.slice(0,4).map(ev=>'<i style="background:'+evColor(ev)+'"></i>').join('')+'</span></button>';
   }).join('');
+  drawDayPanel();
 }
-function shiftMonth(n){dyMonth=new Date(dyMonth.getFullYear(),dyMonth.getMonth()+n,1);drawDiary()}
+function drawDayPanel(){
+  const dt=new Date(dySel+'T00:00:00'),list=evsBetween(dySel,dySel)[dySel]||[];
+  $('dpTitle').textContent=(dt.getMonth()+1)+'월 '+dt.getDate()+'일 ('+DOW[dt.getDay()]+')'+(dySel===today()?' · 오늘':'');
+  $('dpCount').textContent=list.length?list.length+'개':'';
+  $('dyList').innerHTML=list.length?list.map(ev=>'<button class="nrow" type="button" data-i="'+esc(ev.i)+'"><b style="background:'+evColor(ev)+'"></b><span class="nx">'+esc(ev.x)+'</span><span class="nm">'
+    +[ev.t||'',ev.e&&ev.e>ev.d?'~'+ev.e.slice(5).replace('-','/'):'',(ev.p||[]).length?'📷'+ev.p.length:''].filter(Boolean).join(' ')+'</span></button>').join('')
+    :'<div class="empty" style="padding:22px 0">이 날은 적은 게 없어요.</div>';
+}
+function shiftMonth(n){dyMonth=new Date(dyMonth.getFullYear(),dyMonth.getMonth()+n,1);dySel='';drawDiary()}
 $('dyPrev').onclick=()=>shiftMonth(-1);
 $('dyNext').onclick=()=>shiftMonth(1);
-$('dyToday').onclick=()=>{dyMonth=new Date();dyMonth.setDate(1);drawDiary()};
-$('dyGrid').onclick=e=>{const c=e.target.closest('.dcell');if(c)openDay(c.dataset.d)};
+$('dyToday').onclick=()=>{selectDay(today());drawDiary()};
+$('dyGrid').onclick=e=>{const c=e.target.closest('.dc');if(c){selectDay(c.dataset.d);drawDiary()}};
 (()=>{ // 좌우로 밀어서 달 넘기기
-  let sx=0,sy=0;const g=$('dyGridWrap');
+  let sx=0,sy=0;const g=$('dyCal');
   g.addEventListener('touchstart',e=>{sx=e.touches[0].clientX;sy=e.touches[0].clientY},{passive:true});
   g.addEventListener('touchend',e=>{const dx=e.changedTouches[0].clientX-sx,dy=e.changedTouches[0].clientY-sy;if(Math.abs(dx)>60&&Math.abs(dx)>Math.abs(dy)*2)shiftMonth(dx<0?1:-1)},{passive:true});
 })();
 $('dyBack').onclick=()=>{$('diaryScreen').hidden=true;drawHome()};
-$('goDiary').onclick=()=>{dyMonth=new Date();dyMonth.setDate(1);dySearchOn=false;$('dySearchBox').hidden=true;$('dyGridWrap').hidden=false;drawDiary();$('diaryScreen').hidden=false};
+$('goDiary').onclick=()=>{selectDay(today());dySearchOn=false;$('dySearchBox').hidden=true;$('dyMain').hidden=false;$('dySearchBtn').textContent='검색';drawDiary();$('diaryScreen').hidden=false};
+
+/* 한 줄 바로 적기: 고른 날에 내 기본 색으로 추가 */
+async function quickAdd(){
+  const x=$('dyAdd').value.trim();if(!x)return;
+  const ev={i:newEvId(),d:dySel,x:x.slice(0,200)},c=myColor();if(c>1)ev.c=c;
+  monthRow(dySel.slice(0,7),true).ev.push(ev);
+  $('dyAdd').value='';await save();drawDiary();
+  const l=$('dyList');l.scrollTop=l.scrollHeight;
+}
+$('dyAddBtn').onclick=quickAdd;
+$('dyAdd').onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();quickAdd()}};
+$('dyMore').onclick=()=>{const t=$('dyAdd').value.trim();$('dyAdd').value='';openDay(dySel,null,t)};
+$('dyList').onclick=e=>{
+  const b=e.target.closest('.nrow');if(!b)return;
+  for(const r of db.diary){const ev=r.ev.find(x=>x.i===b.dataset.i);if(ev){openDay(ev.d,ev);return}}
+};
 
 /* 검색: 예전에 뭘 했는지 찾아볼 때 */
 function drawDySearch(){
@@ -2049,34 +2111,30 @@ function drawDySearch(){
   box.innerHTML='<div class="wmeta" style="margin-bottom:8px">'+all.length+'개'+(all.length>200?' (최근 200개만 보여요)':'')+'</div>'
     +all.slice(0,200).map(ev=>'<button class="drow" type="button" data-d="'+ev.d+'"><i style="background:'+evColor(ev)+'"></i><span class="tm">'+ev.d.replace(/-/g,'.')+'</span><span class="tx">'+esc(ev.x)+'</span></button>').join('');
 }
-$('dySearchBtn').onclick=()=>{
-  dySearchOn=!dySearchOn;$('dySearchBox').hidden=!dySearchOn;$('dyGridWrap').hidden=dySearchOn;
-  $('dySearchBtn').textContent=dySearchOn?'달력':'검색';
-  if(dySearchOn){drawDySearch();$('dyQ').focus()}else drawDiary();
-};
+function setSearch(on){
+  dySearchOn=on;$('dySearchBox').hidden=!on;$('dyMain').hidden=on;
+  $('dySearchBtn').textContent=on?'달력':'검색';
+  if(on){drawDySearch();$('dyQ').focus()}else drawDiary();
+}
+$('dySearchBtn').onclick=()=>setSearch(!dySearchOn);
 $('dyQ').oninput=drawDySearch;
-$('dyRes').onclick=e=>{const b=e.target.closest('.drow');if(b){const d=b.dataset.d;dyMonth=new Date(d.slice(0,4),+d.slice(5,7)-1,1);openDay(d)}};
+$('dyRes').onclick=e=>{const b=e.target.closest('.drow');if(b){selectDay(b.dataset.d);setSearch(false)}};
 
-/* 하루 화면: 그날 일정 목록 + 쓰기/고치기 */
-const newDraft=d=>({d,x:'',t:'',e:'',c:1,p:[]});
-function openDay(d){
-  daySel=d;dayEd=null;dayDraft=newDraft(d);
+/* 자세히: 시간·끝나는 날·색·사진까지 적거나 고치는 화면 */
+const newDraft=d=>({d,x:'',t:'',e:'',c:myColor(),p:[]});
+function openDay(d,ev,text){
+  daySel=d;dayEd=ev||null;dayDraft=newDraft(d);if(text)dayDraft.x=text;
   $('dayScreen').hidden=false;drawDay();
-  if(!(evsBetween(d,d)[d]||[]).length)setTimeout(()=>$('dText').focus(),60);
+  setTimeout(()=>$('dText').focus(),60);
 }
 function drawDay(){
-  const d=daySel,dt=new Date(d+'T00:00:00');
+  const dt=new Date(daySel+'T00:00:00');
   $('dHead').textContent=(dt.getMonth()+1)+'월 '+dt.getDate()+'일 ('+DOW[dt.getDay()]+')';
-  const list=evsBetween(d,d)[d]||[],box=$('dList');
-  box.innerHTML=list.length?list.map(ev=>'<button class="drow" type="button" data-i="'+esc(ev.i)+'"><i style="background:'+evColor(ev)+'"></i>'
-    +(ev.t?'<span class="tm">'+ev.t+'</span>':'')+'<span class="tx">'+esc(ev.x)+'</span>'
-    +(ev.e&&ev.e>ev.d?'<span class="tm">~'+ev.e.slice(5).replace('-','/')+'</span>':'')
-    +((ev.p||[]).length?'<span class="tm">📷'+ev.p.length+'</span>':'')+'</button>').join(''):'<div class="empty" style="padding:14px 0">이 날은 적은 게 없어요.</div>';
   const ev=dayEd,v=ev||dayDraft;
-  $('dFormTitle').textContent=ev?'일정 고치기':'새로 적기';
-  $('dText').value=v.x||'';$('dDate').value=v.d||d;$('dTime').value=v.t||'';$('dEnd').value=v.e||'';
+  $('dFormTitle').textContent=ev?'고치기':'자세히 적기';
+  $('dText').value=v.x||'';$('dDate').value=v.d||daySel;$('dTime').value=v.t||'';$('dEnd').value=v.e||'';
   dayColor=v.c||1;drawDayColors();
-  $('dCancel').hidden=!ev;$('dDel').hidden=!ev;
+  $('dDel').hidden=!ev;
   if(ev)armDelete($('dDel'),()=>{
     const row=monthRow(ev.d.slice(0,7));
     if(row)row.ev=row.ev.filter(x=>x!==ev);
@@ -2088,12 +2146,6 @@ function drawDayColors(){
   $('dColors').innerHTML=DIARY_COLORS.map((c,i)=>'<button type="button" data-c="'+(i+1)+'" aria-label="색 '+(i+1)+'" style="background:'+c+'"'+(dayColor===i+1?' class="on"':'')+'></button>').join('');
 }
 $('dColors').onclick=e=>{const b=e.target.closest('button');if(b){dayColor=+b.dataset.c;drawDayColors()}};
-$('dList').onclick=e=>{
-  const b=e.target.closest('.drow');if(!b)return;
-  for(const r of db.diary){const ev=r.ev.find(x=>x.i===b.dataset.i);if(ev){dayEd=ev;break}}
-  if(dayEd){drawDay();$('dText').focus()}
-};
-$('dCancel').onclick=()=>{dayEd=null;dayDraft=newDraft(daySel);drawDay()};
 $('dBack').onclick=()=>{
   if(dayEd&&dayEd.p&&!dayEd.p.length)delete dayEd.p;
   clearTimeout(saveTimer);save();$('dayScreen').hidden=true;dayEd=null;drawDiary();
@@ -2114,10 +2166,8 @@ async function saveDay(){
   if(dayEd&&oldYm!==ym){const old=monthRow(oldYm);if(old)old.ev=old.ev.filter(q=>q!==ev)}
   const row=monthRow(ym,true);
   if(!row.ev.includes(ev))row.ev.push(ev);
-  dyMonth=new Date(+ym.slice(0,4),+ym.slice(5,7)-1,1);
-  dayEd=null;clearTimeout(saveTimer);await save();
+  selectDay(d);dayEd=null;clearTimeout(saveTimer);await save();
   $('dayScreen').hidden=true;drawDiary();
-  if(dySearchOn)drawDySearch();
 }
 $('dSave').onclick=saveDay;
 $('dText').onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();saveDay()}};
