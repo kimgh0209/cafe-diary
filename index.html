@@ -463,13 +463,18 @@ body.trip .chip.on{background:var(--trip);border-color:var(--trip)}
       <input type="file" id="file" accept="image/*" multiple hidden>
 
       <section class="sec">
-        <h2><span>커피</span><span class="score" id="coffeeScore"></span></h2>
-        <div><label class="lbl">맛 별점</label><div class="stars" id="coffeeStars"></div></div>
+        <h2><span>커피</span></h2>
         <div class="acid">
-          <label class="lbl" for="acidity">산도</label>
-          <input type="range" id="acidity" min="1" max="5" step="1">
-          <div class="ends"><span>고소·쌉쌀</span><span>상큼·과일</span></div>
-          <div class="now" id="acidNow"></div>
+          <label class="lbl" for="nutty">고소한 맛</label>
+          <input type="range" id="nutty" min="1" max="5" step="1">
+          <div class="ends"><span>약해요</span><span>진해요</span></div>
+          <div class="now" id="nuttyNow"></div>
+        </div>
+        <div class="acid">
+          <label class="lbl" for="sour">신맛</label>
+          <input type="range" id="sour" min="1" max="5" step="1">
+          <div class="ends"><span>약해요</span><span>진해요</span></div>
+          <div class="now" id="sourNow"></div>
         </div>
         <div><label class="lbl" for="coffeeMenu">마신 메뉴</label><input type="text" id="coffeeMenu" placeholder="예: 핸드드립 에티오피아"></div>
         <div><label class="lbl" for="coffeePrice">커피 금액</label>
@@ -478,8 +483,7 @@ body.trip .chip.on{background:var(--trip);border-color:var(--trip)}
       </section>
 
       <section class="sec">
-        <h2><span>빵 · 디저트</span><span class="score" id="bakeScore"></span></h2>
-        <div><label class="lbl">맛 별점</label><div class="stars" id="bakeStars"></div></div>
+        <h2><span>빵 · 디저트</span></h2>
         <div><label class="lbl" for="bakeMenu">먹은 메뉴</label><input type="text" id="bakeMenu" placeholder="예: 소금빵, 바스크 치즈케이크"></div>
         <div><label class="lbl" for="bakePrice">빵 · 디저트 금액</label>
           <div class="price"><input type="number" id="bakePrice" inputmode="numeric" min="0" step="100" placeholder="0"><span>원</span></div></div>
@@ -887,7 +891,7 @@ body.trip .chip.on{background:var(--trip);border-color:var(--trip)}
 </div></nav>
 
 <script>
-const APP_VER='25';
+const APP_VER='26';
 const $=id=>document.getElementById(id);
 const ACID=[['매우 낮음','쌉쌀하고 묵직한 맛'],['낮음','고소하고 부드러운 맛'],['중간','균형 잡힌 산미'],['높음','과일처럼 상큼한 산미'],['매우 높음','레몬처럼 날카로운 산미']];
 const KIND={spot:{label:'명소',icon:'📍'},food:{label:'식당',icon:'🍽️'},cafe:{label:'카페',icon:'☕'},bakery:{label:'빵집',icon:'🥐'},lodging:{label:'숙소',icon:'🛏️'},move:{label:'교통',icon:'🚗'}};
@@ -1458,8 +1462,13 @@ function armDelete(btn,fn){
 }
 
 /* 맛집·카페 기록 화면 */
-function drawAcid(){const v=cur.coffee.acidity;$('acidity').value=v;$('acidNow').innerHTML='<b>'+ACID[v-1][0]+'</b> · '+ACID[v-1][1]}
-$('acidity').oninput=e=>{cur.coffee.acidity=+e.target.value;drawAcid();queueSave()};
+const TASTE_LV=['거의 없어요','약해요','보통','진해요','아주 진해요'];
+function drawAcid(){
+  // 예전 기록은 '산도' 한 칸만 있어서, 새 칸이 비어 있으면 거기서 짐작해 보여 줌(저장은 슬라이더를 움직일 때만)
+  const a=cur.coffee.acidity||3,dflt={nutty:6-a,sour:a};
+  [['nutty','nuttyNow'],['sour','sourNow']].forEach(([k,n])=>{const v=cur.coffee[k]||dflt[k];$(k).value=v;$(n).innerHTML='<b>'+TASTE_LV[v-1]+'</b>'});
+}
+['nutty','sour'].forEach(k=>$(k).oninput=e=>{cur.coffee[k]=+e.target.value;drawAcid();queueSave()});
 function drawTotal(){$('totalPrice').textContent=won(total(cur))}
 function drawKind(){document.querySelectorAll('#kindSeg button').forEach(b=>b.classList.toggle('on',b.dataset.k===cur.kind))}
 document.querySelectorAll('#kindSeg button').forEach(b=>b.onclick=()=>{cur.kind=b.dataset.k;drawKind();drawMarkers();queueSave()});
@@ -1483,8 +1492,6 @@ function openEdit(id,isNew){
   fields.forEach(([fid,get])=>$(fid).value=get(cur)??'');
   $('pname').textContent=cur.name||'새 기록';
   $('withList').innerHTML=[...new Set(db.places.map(p=>p.with).filter(Boolean))].map(v=>'<option value="'+esc(v)+'">').join('');
-  stars($('coffeeStars'),()=>cur.coffee.rating,v=>cur.coffee.rating=v,$('coffeeScore'));
-  stars($('bakeStars'),()=>cur.bake.rating,v=>cur.bake.rating=v,$('bakeScore'));
   mountPhotos($('photos'),$('file'),()=>cur.photos);
   drawKind();drawAcid();drawTotal();
   setSaved('');$('editBody').scrollTop=0;
