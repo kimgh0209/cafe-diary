@@ -341,11 +341,23 @@ body.trip .chip.on{background:var(--trip);border-color:var(--trip)}
 .reel{margin:8px auto 18px;max-width:340px;background:var(--bg);border:1px solid var(--line);border-radius:26px;padding:26px 18px 22px;text-align:center}
 .reel .re{font-size:68px;line-height:1.1}
 .reel .rn{font-size:28px;font-weight:700;margin-top:6px;word-break:keep-all}
-.reel .rs{font-size:13px;color:var(--muted);margin-top:8px;min-height:20px;overflow-wrap:anywhere}
+.reel .rs{font-size:13px;color:var(--muted);margin-top:8px;min-height:20px;overflow-wrap:anywhere;white-space:pre-line}
 .reel.spin .re{animation:fdshake .18s linear infinite}
 @keyframes fdshake{0%{transform:translateY(0) rotate(-6deg)}50%{transform:translateY(-6px) rotate(6deg)}100%{transform:translateY(0) rotate(-6deg)}}
 @media (prefers-reduced-motion:reduce){.reel.spin .re{animation:none}}
 #fdActs[hidden]{display:none}
+.fdweather{margin:2px 0 12px;text-align:center;font-size:13px;color:var(--muted);line-height:1.5}
+.fdrec{margin:0 auto 16px;max-width:340px;background:linear-gradient(135deg,var(--accent-soft),var(--bg));border:1px solid var(--line);border-radius:22px;padding:16px 16px 14px;text-align:center}
+.fdrec[hidden]{display:none}
+.fdrec .rh{font-size:13px;font-weight:700;color:var(--accent)}
+.fdrec .rh span{font-weight:400;color:var(--muted);margin-left:2px}
+.fdrec .re{font-size:44px;line-height:1.2;margin-top:6px}
+.fdrec .rn{font-size:24px;font-weight:700;word-break:keep-all}
+.fdrec .rr{font-size:14px;margin-top:6px;word-break:keep-all}
+.fdrec .rs{font-size:12px;color:var(--muted);margin-top:4px;overflow-wrap:anywhere}
+.fdrec .rb{margin-top:10px}
+.fdctx{display:flex;gap:8px;align-items:center;justify-content:center;font-size:13px;color:var(--muted);margin:0 0 12px}
+.fdctx input{width:16px;height:16px;margin:0;accent-color:var(--accent)}
 .fdgo{display:block;margin:0 auto 12px;font-size:20px;font-weight:700;padding:14px 34px}
 .fdchips{display:flex;flex-wrap:wrap;gap:6px;justify-content:center}
 .dysb{flex:1;min-height:0;display:flex;flex-direction:column}
@@ -732,8 +744,16 @@ body.trip .chip.on{background:var(--trip);border-color:var(--trip)}
   <div class="page">
     <div class="bar"><button class="ibtn" id="fdBack" type="button">← 닫기</button><h1>오늘 뭐 먹지?</h1></div>
     <div class="scroll">
+      <div class="fdweather" id="fdWeather">날씨 불러오는 중…</div>
+      <div class="fdrec" id="fdRec" hidden>
+        <div class="rh">오늘의 추천 <span id="fdRecWhen"></span></div>
+        <div class="re" id="fdRecEmoji"></div><div class="rn" id="fdRecName"></div>
+        <div class="rr" id="fdRecWhy"></div><div class="rs" id="fdRecSub"></div>
+        <div class="rb"><button class="btn" id="fdRecNext" type="button">다른 추천 보기</button></div>
+      </div>
       <div class="reel" id="fdReel"><div class="re" id="fdEmoji">🍽️</div><div class="rn" id="fdName">오늘 뭐 먹을까요?</div><div class="rs" id="fdSub"></div></div>
       <button class="btn on fdgo" id="fdGo" type="button">돌리기!</button>
+      <label class="fdctx"><input type="checkbox" id="fdCtx"> 룰렛에도 날씨·상황 반영</label>
       <div class="actions" id="fdActs" hidden style="justify-content:center"><button class="btn" id="fdWrite" type="button">오늘 일정에 적기</button></div>
       <section class="sec">
         <h2><span>나올 수 있는 종류</span></h2>
@@ -788,7 +808,7 @@ body.trip .chip.on{background:var(--trip);border-color:var(--trip)}
 </div></nav>
 
 <script>
-const APP_VER='17';
+const APP_VER='18';
 const $=id=>document.getElementById(id);
 const ACID=[['매우 낮음','쌉쌀하고 묵직한 맛'],['낮음','고소하고 부드러운 맛'],['중간','균형 잡힌 산미'],['높음','과일처럼 상큼한 산미'],['매우 높음','레몬처럼 날카로운 산미']];
 const KIND={spot:{label:'명소',icon:'📍'},food:{label:'식당',icon:'🍽️'},cafe:{label:'카페',icon:'☕'},bakery:{label:'빵집',icon:'🥐'},lodging:{label:'숙소',icon:'🛏️'},move:{label:'교통',icon:'🚗'}};
@@ -2307,6 +2327,58 @@ function foodWeight(c){
   const pen=days<=2?.15:days<=6?.5:1;               // 방금 먹은 건 덜 나오게
   return (Math.pow(c.w,.7)+.2)*pen;                  // 한 가지가 너무 자주 나오지 않게 완만하게
 }
+/* 오늘의 날씨·상황 (순수 계산: 날씨를 받아 오는 부분은 따로) */
+const WX=[[0,'맑음','☀️'],[1,'대체로 맑음','🌤️'],[2,'구름 조금','⛅'],[3,'흐림','☁️'],[45,'안개','🌫️'],[48,'안개','🌫️'],[51,'이슬비','🌦️'],[53,'이슬비','🌦️'],[55,'이슬비','🌦️'],[56,'얼어붙는 이슬비','🌧️'],[57,'얼어붙는 이슬비','🌧️'],[61,'비','🌧️'],[63,'비','🌧️'],[65,'강한 비','🌧️'],[66,'얼어붙는 비','🌧️'],[67,'얼어붙는 비','🌧️'],[71,'눈','❄️'],[73,'눈','❄️'],[75,'폭설','❄️'],[77,'눈','❄️'],[80,'소나기','🌦️'],[81,'소나기','🌦️'],[82,'강한 소나기','⛈️'],[85,'눈 소나기','❄️'],[86,'눈 소나기','❄️'],[95,'천둥번개','⛈️'],[96,'천둥번개','⛈️'],[99,'천둥번개','⛈️']];
+const wxInfo=code=>{const r=WX.find(x=>x[0]===code);return {label:r?r[1]:'',emoji:r?r[2]:'🌡️'}};
+function foodContext(w,now){
+  const d=now||new Date(),h=d.getHours(),dow=d.getDay();
+  const c={h,dow,weekend:dow===0||dow===6,fri:dow===5,meal:h<10?'아침':h<15?'점심':h<21?'저녁':'야식',w:w||null};
+  if(w){
+    const code=w.code;
+    c.snow=(code>=71&&code<=77)||code===85||code===86;
+    c.rain=!c.snow&&((code>=51&&code<=67)||(code>=80&&code<=82)||code>=95||w.precip>=0.3||w.pop>=70);
+    c.feels=w.feels;c.cold=w.feels<=5;c.chilly=w.feels>5&&w.feels<=12;c.hot=w.feels>=27;
+    c.nice=!c.rain&&!c.snow&&w.feels>12&&w.feels<27;c.dust=w.pm25!=null&&w.pm25>=36;
+  }
+  return c;
+}
+// 상황별로 더 당기거나 덜 당기는 종류 (1보다 크면 더 잘 나오고, 작으면 덜 나와요)
+const FOOD_RULES=[
+  {when:c=>c.snow||c.rain,why:c=>c.snow?'눈 오는 날엔 뜨끈한 게 좋아요':'비 오는 날엔 뜨끈한 국물이나 전이 생각나요',
+   m:{'국수·면':2,'찌개·탕':1.8,'떡볶이·분식':1.5,'중식':1.6,'마라탕':1.4,'샌드위치·샐러드':.5}},
+  {when:c=>c.cold,why:()=>'꽤 추운 날이라 따뜻한 국물이 좋아요',
+   m:{'찌개·탕':2.2,'마라탕':1.7,'국수·면':1.4,'고기·구이':1.3,'중식':1.2,'샌드위치·샐러드':.5,'빵·디저트':.8}},
+  {when:c=>c.chilly,why:()=>'쌀쌀해서 든든한 게 좋아요',
+   m:{'찌개·탕':1.4,'마라탕':1.3,'국수·면':1.2}},
+  {when:c=>c.hot,why:()=>'더운 날엔 시원하고 가벼운 게 좋아요',
+   m:{'국수·면':1.8,'샌드위치·샐러드':1.8,'빵·디저트':1.5,'일식':1.3,'찌개·탕':.5,'마라탕':.6,'고기·구이':.8,'햄버거':.8,'치킨':.9}},
+  {when:c=>c.nice&&c.meal!=='야식'&&c.meal!=='아침',why:()=>'날씨가 좋아서 나가서 먹기 좋아요',
+   m:{'양식·뷔페':1.2,'고기·구이':1.15,'피자':1.1}},
+  {when:c=>c.weekend&&(c.meal==='점심'||c.meal==='저녁'),why:()=>'주말이라 여유롭게 한 끼 어때요',
+   m:{'양식·뷔페':1.4,'고기·구이':1.4,'족발·보쌈':1.3,'일식':1.2,'피자':1.2}},
+  {when:c=>!c.weekend&&c.meal==='점심',why:()=>'평일 점심엔 빨리 먹기 좋은 게 좋아요',
+   m:{'한식':1.3,'찌개·탕':1.2,'돈까스':1.3,'국수·면':1.3,'샌드위치·샐러드':1.3,'햄버거':1.1}},
+  {when:c=>(c.fri||c.weekend)&&(c.meal==='저녁'||c.meal==='야식'),why:c=>c.fri?'불금이라 치맥이나 족발 생각나는 저녁이에요':'주말 저녁은 든든하게 즐겨요',
+   m:{'치킨':1.8,'족발·보쌈':1.6,'고기·구이':1.3}},
+  {when:c=>c.meal==='야식',why:()=>'늦은 시간이라 야식 느낌으로 골랐어요',
+   m:{'치킨':1.6,'떡볶이·분식':1.6,'족발·보쌈':1.3,'마라탕':1.2,'샌드위치·샐러드':.6,'양식·뷔페':.5}},
+  {when:c=>c.meal==='아침',why:()=>'아침엔 가볍게 시작해요',
+   m:{'샌드위치·샐러드':2.2,'빵·디저트':2,'햄버거':1.4,'한식':1.2,'고기·구이':.4,'족발·보쌈':.3,'양식·뷔페':.4,'치킨':.4,'마라탕':.4}},
+  {when:c=>c.dust,why:()=>'미세먼지가 나빠서 밖에 덜 나가고 든든하게 먹는 날이에요',
+   m:{'고기·구이':1.3,'족발·보쌈':1.4,'치킨':1.2}},
+];
+function foodMult(cat,c){
+  let m=1;const why=[];
+  FOOD_RULES.forEach(r=>{if(r.m[cat]&&r.when(c)){m*=r.m[cat];if(r.m[cat]>1)why.push(r.why(c))}});
+  return {m,why};
+}
+// 점수 높은 순 (평소 먹은 기록 + 요즘 얼마나 먹었는지 + 오늘 상황)
+function foodRank(c,off,useCtx){
+  return Object.values(foodStats()).filter(x=>!off.includes(x.n)).map(x=>{
+    const f=useCtx?foodMult(x.n,c):{m:1,why:[]};
+    return {c:x,score:foodWeight(x)*f.m,why:f.why};
+  }).sort((a,b)=>b.score-a.score);
+}
 const fdOff=()=>{try{const a=JSON.parse(localStorage.getItem('fam_food_off_v1')||'null');return Array.isArray(a)?a:['카페']}catch(e){return ['카페']}};
 const fdSetOff=a=>{try{localStorage.setItem('fam_food_off_v1',JSON.stringify(a))}catch(e){}};
 let fdBusy=false,fdPick=null;
@@ -2319,7 +2391,7 @@ $('fdChips').onclick=e=>{
   const b=e.target.closest('.chip');if(!b)return;
   const n=b.dataset.n,off=fdOff(),i=off.indexOf(n);
   if(i>=0)off.splice(i,1);else off.push(n);
-  fdSetOff(off);drawFoodChips();
+  fdSetOff(off);drawFoodChips();drawFoodRec();
 };
 function showFood(c,final){
   $('fdEmoji').textContent=FOOD_META[c.n]||'🍽️';$('fdName').textContent=c.n;
@@ -2338,7 +2410,8 @@ async function spinFood(){
   if(list.length<2){showFood({n:'먹은 기록이 아직 적어요'},false);$('fdEmoji').textContent='🍽️';return}
   fdBusy=true;$('fdGo').disabled=true;$('fdActs').hidden=true;$('fdReel').classList.add('spin');
   // 가중치로 한 가지 고르기
-  const ws=list.map(foodWeight),tot=ws.reduce((a,b)=>a+b,0);let r=Math.random()*tot,pick=list[list.length-1];
+  const ctx=fdCtxOn()?foodContext(fdW):null;
+  const ws=list.map(c=>foodWeight(c)*(ctx?foodMult(c.n,ctx).m:1)),tot=ws.reduce((a,b)=>a+b,0);let r=Math.random()*tot,pick=list[list.length-1];
   for(let i=0;i<list.length;i++){r-=ws[i];if(r<=0){pick=list[i];break}}
   const steps=24;let prev=null;
   for(let i=0;i<steps;i++){
@@ -2347,6 +2420,7 @@ async function spinFood(){
     showFood(c,false);prev=c;await sleep(40+i*i*.5);
   }
   showFood(pick,true);fdPick=pick;
+  if(ctx){const f=foodMult(pick.n,ctx);if(f.why.length)$('fdSub').textContent+='\n'+f.why[0]}
   $('fdReel').classList.remove('spin');$('fdGo').textContent='다시 돌리기';$('fdGo').disabled=false;$('fdActs').hidden=false;
   $('fdWrite').disabled=false;$('fdWrite').textContent='오늘 일정에 적기';
   fdBusy=false;
@@ -2360,8 +2434,59 @@ $('fdWrite').onclick=async()=>{
   await save();drawFoodChips();
 };
 $('goFood').onclick=()=>{fdPick=null;$('fdActs').hidden=true;$('fdGo').textContent='돌리기!';$('fdGo').disabled=false;
-  $('fdEmoji').textContent='🍽️';$('fdName').textContent='오늘 뭐 먹을까요?';$('fdSub').textContent='';drawFoodChips();$('foodScreen').hidden=false};
+  $('fdEmoji').textContent='🍽️';$('fdName').textContent='오늘 뭐 먹을까요?';$('fdSub').textContent='';drawFoodChips();$('foodScreen').hidden=false;openFoodToday()};
 $('fdBack').onclick=()=>{if(fdBusy)return;$('foodScreen').hidden=true;drawHome()};
+/* 날씨 불러오기 (무료 날씨 서비스 open-meteo). 보내는 것은 우리 동네 대략 좌표(소수점 둘째 자리까지)뿐이에요 */
+let fdW=null,fdRecIdx=0,wxCache=null;
+const fdCtxOn=()=>{try{return localStorage.getItem('fam_food_ctx_v1')!=='off'}catch(e){return true}};
+async function loadWeather(){
+  if(wxCache&&Date.now()-wxCache.t<30*60e3)return wxCache.w;
+  const lat=START[0].toFixed(2),lon=START[1].toFixed(2);
+  const ctl=new AbortController(),tm=setTimeout(()=>ctl.abort(),6000);
+  try{
+    const r=await fetch('https://api.open-meteo.com/v1/forecast?latitude='+lat+'&longitude='+lon+'&current=temperature_2m,apparent_temperature,precipitation,weather_code&daily=precipitation_probability_max,temperature_2m_max,temperature_2m_min&timezone=Asia%2FSeoul&forecast_days=1',{signal:ctl.signal});
+    if(!r.ok)throw new Error('weather '+r.status);
+    const j=await r.json(),cu=j.current,dl=j.daily||{};
+    if(!cu||typeof cu.temperature_2m!=='number')throw new Error('weather shape');
+    const w={temp:cu.temperature_2m,feels:typeof cu.apparent_temperature==='number'?cu.apparent_temperature:cu.temperature_2m,precip:cu.precipitation||0,code:cu.weather_code,
+      pop:(dl.precipitation_probability_max&&dl.precipitation_probability_max[0])||0,pm25:null};
+    try{ // 미세먼지는 못 받아도 괜찮음
+      const a=await fetch('https://air-quality-api.open-meteo.com/v1/air-quality?latitude='+lat+'&longitude='+lon+'&current=pm2_5',{signal:ctl.signal});
+      const aj=await a.json();if(aj.current&&typeof aj.current.pm2_5==='number')w.pm25=aj.current.pm2_5;
+    }catch(e){}
+    wxCache={t:Date.now(),w};return w;
+  }catch(e){console.warn('날씨를 못 불러왔어요',e);return null}
+  finally{clearTimeout(tm)}
+}
+function drawWeatherStrip(){
+  const c=foodContext(fdW),dn=DOW[c.dow]+'요일 '+c.meal,w=fdW;
+  if(!w){$('fdWeather').textContent=dn+' · 날씨를 못 불러와서 요일과 시간만 반영했어요';return}
+  const i=wxInfo(w.code);
+  $('fdWeather').textContent=i.emoji+' '+Math.round(w.temp)+'° (체감 '+Math.round(w.feels)+'°)'+(i.label?' · '+i.label:'')+(w.pop>=40?' · 비 올 확률 '+w.pop+'%':'')+(c.dust?' · 미세먼지 나쁨 😷':'')+' · '+dn;
+}
+function drawFoodRec(){
+  const ctx=foodContext(fdW),rank=foodRank(ctx,fdOff(),true),box=$('fdRec');
+  if(rank.length<2){box.hidden=true;return}
+  const it=rank[fdRecIdx%Math.min(5,rank.length)],c=it.c;
+  const top=Object.values(c.names).sort((a,b)=>b.n-a.n).filter(x=>x.n>=2).slice(0,2).map(x=>x.t);
+  $('fdRecWhen').textContent='· '+ctx.meal;
+  $('fdRecEmoji').textContent=FOOD_META[c.n]||'🍽️';$('fdRecName').textContent=c.n;
+  $('fdRecWhy').textContent=it.why.length?it.why.slice(0,2).join(' · '):'자주 드셨고 한동안 안 드신 메뉴예요';
+  $('fdRecSub').textContent=(top.length?'자주 가신 곳: '+top.join(', ')+' · ':'')+'최근 1년 '+c.y1+'번';
+  box.hidden=false;
+}
+$('fdRecNext').onclick=()=>{fdRecIdx++;drawFoodRec()};
+$('fdCtx').onchange=()=>{try{localStorage.setItem('fam_food_ctx_v1',$('fdCtx').checked?'on':'off')}catch(e){}};
+async function openFoodToday(){
+  fdRecIdx=0;$('fdCtx').checked=fdCtxOn();
+  fdW=wxCache&&Date.now()-wxCache.t<30*60e3?wxCache.w:null;
+  $('fdWeather').textContent='날씨 불러오는 중…';
+  drawFoodRec();                       // 먼저 요일·시간만으로 보여 주고
+  const w=await loadWeather();fdW=w;   // 날씨가 오면 다시 계산
+  drawWeatherStrip();drawFoodRec();
+}
+
+
 
 /* 알림: 내가 새로 적으면 상대 폰에 알림이 가요 (웹 푸시). 내용에는 이름과 종류만 담고, 일정 제목·사진은 보내지 않아요 */
 const PUSH_PUBLIC='BLBlseLwvx7VQ9mo6Ua9FlgRDkTrHHDVaLzQKyEXuQ6tAVZ977YpEfmFbgZ0eD7sJhouihVgB0QTSB2GAh3eorg';
