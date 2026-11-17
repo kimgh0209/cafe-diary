@@ -149,6 +149,9 @@ body.trip .ibtn{color:var(--trip)}
 .shophd{display:flex;align-items:center;justify-content:space-between;margin:18px 0 2px;font-size:13px;color:var(--muted)}
 .shophd:first-child{margin-top:0}
 .dpadd[hidden],.shoptop[hidden],.scroll[hidden]{display:none}
+.rcbtn{width:100%;padding:12px;font-size:16px;margin-bottom:6px}
+.rcstatus{font-size:13px;color:var(--muted);min-height:18px;margin-bottom:10px;text-align:center}
+.rcstatus:empty{min-height:0;margin-bottom:6px}
 #mealSug{margin-bottom:14px}
 .sughd{display:grid;gap:2px;margin-bottom:6px}.sughd b{font-size:15px}.sughd span{font-size:12px;color:var(--muted)}
 .sughint{font-size:13px;color:var(--muted);padding:8px 0}
@@ -501,6 +504,9 @@ body.trip .chip.on{background:var(--trip);border-color:var(--trip)}
       <button class="ibtn danger" id="delBtn" type="button">삭제</button>
     </div>
     <div class="scroll" id="editBody">
+      <button class="btn on rcbtn" id="rcBtn" type="button">🧾 영수증 사진으로 자동 입력</button>
+      <input type="file" id="rcFile" accept="image/*" hidden>
+      <div class="rcstatus" id="rcStatus" role="status"></div>
       <div class="row" style="margin-bottom:12px">
         <div style="flex:2"><label class="lbl" for="name">가게 이름</label><input type="text" id="name"></div>
         <div><label class="lbl" for="date">방문일</label><input type="date" id="date"></div>
@@ -514,6 +520,9 @@ body.trip .chip.on{background:var(--trip);border-color:var(--trip)}
         <datalist id="withList"></datalist>
       </div>
 
+      <div style="margin-bottom:16px"><label class="lbl" for="totalIn">총 금액 (커피·빵 합쳐서)</label>
+        <div class="price"><input type="number" id="totalIn" inputmode="numeric" min="0" step="100" placeholder="0"><span>원</span></div></div>
+
       <label class="lbl">사진</label>
       <div class="photos" id="photos"></div>
       <input type="file" id="file" accept="image/*" multiple hidden>
@@ -523,26 +532,41 @@ body.trip .chip.on{background:var(--trip);border-color:var(--trip)}
         <div><label class="lbl">커피 맛</label>
           <div class="seg tseg" id="tasteSeg"><button type="button" data-k="nutty">🌰 고소한 맛</button><button type="button" data-k="sour">🍋 신맛</button></div></div>
         <div><label class="lbl" for="coffeeMenu">마신 메뉴</label><input type="text" id="coffeeMenu" placeholder="예: 핸드드립 에티오피아"></div>
-        <div><label class="lbl" for="coffeePrice">커피 금액</label>
-          <div class="price"><input type="number" id="coffeePrice" inputmode="numeric" min="0" step="100" placeholder="0"><span>원</span></div></div>
         <div><label class="lbl" for="coffeeNote">커피 메모</label><textarea id="coffeeNote" placeholder="향, 바디감, 끝맛 등"></textarea></div>
       </section>
 
       <section class="sec">
         <h2><span>빵 · 디저트</span></h2>
         <div><label class="lbl" for="bakeMenu">먹은 메뉴</label><input type="text" id="bakeMenu" placeholder="예: 소금빵, 바스크 치즈케이크"></div>
-        <div><label class="lbl" for="bakePrice">빵 · 디저트 금액</label>
-          <div class="price"><input type="number" id="bakePrice" inputmode="numeric" min="0" step="100" placeholder="0"><span>원</span></div></div>
         <div><label class="lbl" for="bakeNote">빵 · 디저트 메모</label><textarea id="bakeNote" placeholder="식감, 단맛, 재방문 의사 등"></textarea></div>
       </section>
 
       <section class="sec">
-        <div class="total"><span>이번 방문 지출</span><b id="totalPrice">0원</b></div>
         <label class="lbl" for="memo">전체 메모</label>
         <textarea id="memo" placeholder="분위기, 주차, 한줄평"></textarea>
         <div><button class="btn" id="moveBtn" type="button">핀 위치 옮기기</button></div>
         <div class="saved"></div>
       </section>
+    </div>
+  </div>
+</div>
+
+<!-- 영수증에서 읽은 내용 확인 -->
+<div class="screen editor over" id="rcScreen" hidden>
+  <div class="page">
+    <div class="bar"><button class="ibtn" id="rcCancel" type="button">← 취소</button><h1>영수증에서 읽은 내용</h1><button class="ibtn" id="rcApply" type="button">적용</button></div>
+    <div class="scroll">
+      <div class="hint" id="rcHint" style="color:var(--muted);font-size:13px;margin-bottom:12px"></div>
+      <div style="margin-bottom:12px"><label class="lbl" for="rcName">가게 이름</label><input type="text" id="rcName"></div>
+      <div class="row" style="margin-bottom:12px">
+        <div><label class="lbl" for="rcDate">방문일</label><input type="date" id="rcDate"></div>
+        <div><label class="lbl" for="rcTotal">총 금액(원)</label><input type="number" id="rcTotal" inputmode="numeric"></div>
+      </div>
+      <div style="margin-bottom:12px"><label class="lbl" for="rcCoffee">마신 메뉴</label><input type="text" id="rcCoffee"></div>
+      <div style="margin-bottom:12px"><label class="lbl" for="rcBake">빵 · 디저트 메뉴</label><input type="text" id="rcBake"></div>
+      <div style="margin-bottom:12px"><label class="lbl" for="rcAddr">주소 (전체 메모에 적어 둬요)</label><input type="text" id="rcAddr"></div>
+      <details style="margin-top:8px"><summary style="cursor:pointer;color:var(--muted);font-size:13px">읽은 글자 원문 보기</summary><pre id="rcRaw" style="white-space:pre-wrap;font-size:12px;color:var(--muted)"></pre></details>
+      <div class="hint" style="color:var(--muted);font-size:12px;margin-top:10px">영수증 사진은 폰 안에서만 읽고 저장하거나 보내지 않아요.</div>
     </div>
   </div>
 </div>
@@ -961,7 +985,7 @@ body.trip .chip.on{background:var(--trip);border-color:var(--trip)}
 </div></nav>
 
 <script>
-const APP_VER='32';
+const APP_VER='33';
 const $=id=>document.getElementById(id);
 const ACID=[['매우 낮음','쌉쌀하고 묵직한 맛'],['낮음','고소하고 부드러운 맛'],['중간','균형 잡힌 산미'],['높음','과일처럼 상큼한 산미'],['매우 높음','레몬처럼 날카로운 산미']];
 const KIND={spot:{label:'명소',icon:'📍'},food:{label:'식당',icon:'🍽️'},cafe:{label:'카페',icon:'☕'},bakery:{label:'빵집',icon:'🥐'},lodging:{label:'숙소',icon:'🛏️'},move:{label:'교통',icon:'🚗'}};
@@ -1279,7 +1303,7 @@ $('q').onfocus=()=>{if($('results').children.length&&$('q').value.trim().length>
 
 /* 목록 */
 function avg(p){const r=[p.coffee.rating,p.bake.rating].filter(Boolean);return r.length?r.reduce((a,b)=>a+b)/r.length:0}
-function total(p){return (+p.coffee.price||0)+(+p.bake.price||0)}
+function total(p){return p.price!==undefined?(+p.price||0):(+p.coffee.price||0)+(+p.bake.price||0)}
 function setBar(title,back,act,actFn,backFn){
   $('listTitle').textContent=title;
   $('listBack').hidden=!back;if(back){$('listBack').textContent=back;$('listBack').onclick=backFn}
@@ -1539,21 +1563,18 @@ function tasteOf(c){ // 고르지 않은 예전 기록은 예전 '산도'(또는
 }
 function drawAcid(){const t=tasteOf(cur.coffee);document.querySelectorAll('#tasteSeg button').forEach(b=>b.classList.toggle('on',b.dataset.k===t))}
 document.querySelectorAll('#tasteSeg button').forEach(b=>b.onclick=()=>{cur.coffee.taste=tasteOf(cur.coffee)===b.dataset.k?'':b.dataset.k;drawAcid();queueSave()});
-function drawTotal(){$('totalPrice').textContent=won(total(cur))}
 function drawKind(){document.querySelectorAll('#kindSeg button').forEach(b=>b.classList.toggle('on',b.dataset.k===cur.kind))}
 document.querySelectorAll('#kindSeg button').forEach(b=>b.onclick=()=>{cur.kind=b.dataset.k;drawKind();drawMarkers();queueSave()});
 
 const fields=[
   ['name',p=>p.name,(p,v)=>p.name=v],['date',p=>p.date,(p,v)=>p.date=v],['withWho',p=>p.with,(p,v)=>p.with=v],
   ['coffeeMenu',p=>p.coffee.menu,(p,v)=>p.coffee.menu=v],['coffeeNote',p=>p.coffee.note,(p,v)=>p.coffee.note=v],
-  ['coffeePrice',p=>p.coffee.price,(p,v)=>p.coffee.price=v],
   ['bakeMenu',p=>p.bake.menu,(p,v)=>p.bake.menu=v],['bakeNote',p=>p.bake.note,(p,v)=>p.bake.note=v],
-  ['bakePrice',p=>p.bake.price,(p,v)=>p.bake.price=v],['memo',p=>p.memo,(p,v)=>p.memo=v]
+  ['totalIn',p=>{if(p.price!==undefined&&p.price!=='')return p.price;const s=(+p.coffee.price||0)+(+p.bake.price||0);return s||''},(p,v)=>p.price=v],['memo',p=>p.memo,(p,v)=>p.memo=v]
 ];
 fields.forEach(([id,get,set])=>{$(id).oninput=()=>{
   set(cur,$(id).value);queueSave();
   if(id==='name'){$('pname').textContent=cur.name||'새 기록';drawMarkers()}
-  if(id.endsWith('Price'))drawTotal();
 }});
 
 function openEdit(id,isNew){
@@ -1563,7 +1584,7 @@ function openEdit(id,isNew){
   $('pname').textContent=cur.name||'새 기록';
   $('withList').innerHTML=[...new Set(db.places.map(p=>p.with).filter(Boolean))].map(v=>'<option value="'+esc(v)+'">').join('');
   mountPhotos($('photos'),$('file'),()=>cur.photos);
-  drawKind();drawAcid();drawTotal();
+  drawKind();drawAcid();$('rcStatus').textContent='';
   setSaved('');$('editBody').scrollTop=0;
   armDelete($('delBtn'),()=>{toTrash('place',cur);db.places=db.places.filter(p=>p!==cur);cur=null;save();$('editScreen').hidden=true;drawMarkers();if(!$('listScreen').hidden)drawList()});
   $('editScreen').hidden=false;
@@ -1580,6 +1601,130 @@ function goMove(target,hide,reopen,text){
   MAP.pan(target.lat,target.lng);startMode({type:'move',target,reopen},text);
 }
 $('moveBtn').onclick=()=>{const p=cur;goMove(p,'editScreen',()=>openEdit(p.id),'새 위치를 지도에서 눌러 주세요')};
+
+/* 영수증 사진 → 글자 읽기(OCR, 폰 안에서 처리·사진은 저장·전송 안 함) → 이름·날짜·메뉴·총 금액 채우기
+   글자 읽기는 Tesseract.js(처음 한 번 인터넷으로 내려받음)를 쓰고, 읽은 결과는 확인 화면에서 고친 뒤 적용해요. */
+const RC_NOISE=/합\s*계|총\s*액|총\s*금액|소계|부가세|과세|면세|공급가|카드|승인|결제|거스름|받을|받은|할인|포인트|적립|전화|TEL|사업자|대표|주소|번호|일시|영수증|POS|전표|단가|수량|금액|품명|메뉴|문의|감사|VAT|SUBTOTAL|TOTAL|CASH|현금|테이블|고객/i;
+const RC_BAKE=/빵|케이크|케익|쿠키|마카롱|마카롱|스콘|크로아상|크루아상|베이글|도넛|도너츠|와플|샌드위치|타르트|푸딩|브라우니|휘낭시에|까눌레|식빵|바게트|파이|롤|디저트|젤라또|아이스크림|토스트|크림치즈|머핀|파운드|티라미수|크로플|퀸아망/;
+const numOf=s=>{const v=parseInt(String(s).replace(/[^\d]/g,''),10);return isFinite(v)?v:0};
+function parseReceipt(raw){
+  const lines=String(raw||'').split(/\r?\n/).map(l=>l.replace(/[|｜_]+/g,' ').replace(/\s+/g,' ').trim()).filter(Boolean);
+  const res={name:'',addr:'',date:'',items:[],total:0,coffee:'',bake:''};
+  // 날짜
+  for(const l of lines){
+    let m=l.match(/(20\d{2})\s*[-./년]\s*(\d{1,2})\s*[-./월]\s*(\d{1,2})/);
+    if(!m){const y=l.match(/\b(2\d)[-./](\d{1,2})[-./](\d{1,2})\b/);if(y)m=[0,'20'+y[1],y[2],y[3]]}
+    if(m&&+m[2]>=1&&+m[2]<=12&&+m[3]>=1&&+m[3]<=31){res.date=m[1]+'-'+String(+m[2]).padStart(2,'0')+'-'+String(+m[3]).padStart(2,'0');break}
+  }
+  // 주소
+  const PROV=/(서울|부산|대구|인천|광주|대전|울산|세종|경기|강원|충북|충남|전북|전남|경북|경남|제주)/,AD={test:l=>PROV.test(l)&&/[가-힣0-9]+(로|길)\s*\d|[가-힣]+(동|읍|면|리)\s*\d/.test(l)};
+  for(const l of lines){
+    if(/주소/.test(l)){res.addr=l.replace(/^.*?주소\s*[:：]?\s*/,'').trim();if(res.addr.length>=6)break;res.addr=''}
+    if(AD.test(l)){res.addr=l.replace(/^.*?주소\s*[:：]?\s*/,'').trim();break}
+  }
+  // 가게 이름
+  for(const l of lines){const m=l.match(/(상호|매장명|가맹점명|점포명|상호명)\s*[:：]?\s*(.+)/);if(m&&m[2].length>=2){res.name=m[2].trim();break}}
+  if(!res.name){
+    for(const l of lines.slice(0,6)){
+      if(RC_NOISE.test(l)||/\d{3}-\d{3,4}-\d{4}/.test(l)||AD.test(l)||!/[가-힣A-Za-z]/.test(l))continue;
+      if(/[가-힣A-Za-z]{2,}/.test(l)&&l.length<=30){res.name=l.replace(/^[^가-힣A-Za-z0-9]+/,'').trim();break}
+    }
+  }
+  // 메뉴 줄: "이름 [단가] [수량] 금액"
+  for(const l of lines){
+    if(RC_NOISE.test(l)||AD.test(l))continue;
+    const m=l.match(/^(.*?[가-힣A-Za-z)\]])\s+((?:[\d,]+\s+){0,2})([\d,]{3,})\s*(?:원)?$/);
+    if(!m)continue;
+    const name=m[1].replace(/^[\d.\s]+/,'').trim(),price=numOf(m[3]);
+    if(name.length<2||price<500||price>500000)continue;
+    const nums=(m[2].match(/[\d,]+/g)||[]).map(numOf);
+    let qty=1;
+    if(nums.length===1&&nums[0]<=20)qty=nums[0];
+    else if(nums.length===2&&nums[1]<=20)qty=nums[1];
+    res.items.push({n:name,qty,price});
+  }
+  // 총 금액: 결제 > 합계 > 카드 순
+  const pri=[/결제\s*(금액|요청)|승인\s*금액|받을\s*금액|청구\s*금액/,/합\s*계|총\s*(액|금액)|TOTAL/i,/카드\s*결제|카드/];
+  for(const re of pri){
+    const hit=lines.filter(l=>re.test(l)&&!/부가세|VAT|과세|면세|공급/.test(l)).map(l=>(l.match(/[\d,]{3,}/g)||[]).map(numOf).filter(v=>v>=500)).flat();
+    if(hit.length){res.total=Math.max(...hit);break}
+  }
+  if(!res.total&&res.items.length)res.total=res.items.reduce((s,i)=>s+i.price,0);
+  // 커피/빵 나누기
+  const fmt=i=>i.n+(i.qty>1?' ×'+i.qty:'');
+  res.coffee=res.items.filter(i=>!RC_BAKE.test(i.n)).map(fmt).join(', ');
+  res.bake=res.items.filter(i=>RC_BAKE.test(i.n)).map(fmt).join(', ');
+  return res;
+}
+let tessLoading=null;
+function loadTesseract(){
+  if(window.Tesseract)return Promise.resolve();
+  if(tessLoading)return tessLoading;
+  tessLoading=new Promise((ok,no)=>{const s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js';s.onload=ok;s.onerror=()=>{tessLoading=null;no(new Error('load'))};document.head.appendChild(s)});
+  return tessLoading;
+}
+// 사진을 읽기 좋게: 크기를 맞추고 흑백·대비를 올림
+async function prepReceipt(file){
+  const url=URL.createObjectURL(file);
+  try{
+    const im=await new Promise((ok,no)=>{const i=new Image();i.onload=()=>ok(i);i.onerror=no;i.src=url});
+    const max=2000,sc=Math.min(1,max/Math.max(im.naturalWidth,im.naturalHeight));
+    const c=document.createElement('canvas');c.width=Math.round(im.naturalWidth*sc);c.height=Math.round(im.naturalHeight*sc);
+    const g=c.getContext('2d');g.drawImage(im,0,0,c.width,c.height);
+    const d=g.getImageData(0,0,c.width,c.height),px=d.data;
+    let lo=255,hi=0;const gray=new Uint8Array(c.width*c.height);
+    for(let i=0,j=0;i<px.length;i+=4,j++){const v=Math.round(px[i]*.299+px[i+1]*.587+px[i+2]*.114);gray[j]=v;if(v<lo)lo=v;if(v>hi)hi=v}
+    const span=Math.max(40,hi-lo);
+    for(let i=0,j=0;i<px.length;i+=4,j++){const v=Math.max(0,Math.min(255,(gray[j]-lo)*255/span));px[i]=px[i+1]=px[i+2]=v}
+    g.putImageData(d,0,0);return c;
+  }finally{URL.revokeObjectURL(url)}
+}
+async function readReceipt(file){
+  const st=$('rcStatus');
+  st.textContent='사진을 준비하는 중…';
+  let worker=null;
+  try{
+    const canvas=await prepReceipt(file);
+    st.textContent='글자 읽는 도구를 불러오는 중… (처음엔 1분쯤 걸릴 수 있어요)';
+    await loadTesseract();
+    worker=await Tesseract.createWorker(['kor','eng'],1,{
+      langPath:'https://cdn.jsdelivr.net/gh/naptha/tessdata@gh-pages/4.0.0_fast',
+      logger:m=>{if(m&&m.status==='recognizing text')st.textContent='영수증 글자를 읽는 중… '+Math.round((m.progress||0)*100)+'%'}
+    });
+    const r=await worker.recognize(canvas);
+    const text=r.data.text||'';
+    st.textContent='';
+    if(!text.trim()){st.textContent='글자를 못 읽었어요. 영수증이 화면에 꽉 차게 밝은 곳에서 다시 찍어 보세요.';return}
+    showReceiptResult(parseReceipt(text),text);
+  }catch(e){
+    console.warn('영수증 읽기 실패',e);
+    st.textContent=navigator.onLine===false||(e&&e.message==='load')?'인터넷에 연결되어 있어야 해요(처음 한 번 도구를 받아요).':'영수증을 읽지 못했어요. 다시 찍어 보세요.';
+  }finally{if(worker)try{await worker.terminate()}catch(e){}}
+}
+let rcRes=null;
+function showReceiptResult(r,raw){
+  rcRes=r;
+  $('rcName').value=r.name;$('rcDate').value=r.date;$('rcCoffee').value=r.coffee;$('rcBake').value=r.bake;
+  $('rcTotal').value=r.total||'';$('rcAddr').value=r.addr;$('rcRaw').textContent=raw;
+  const found=[r.name,r.date,r.coffee,r.bake,r.total,r.addr].filter(Boolean).length;
+  $('rcHint').textContent=found?'읽은 내용이에요. 틀린 곳은 고친 뒤 [적용]을 눌러 주세요. 비워 둔 칸은 기록에 반영하지 않아요.':'읽은 글자에서 알아낸 내용이 없어요. 아래 원문을 보고 직접 적거나 다시 찍어 보세요.';
+  $('rcScreen').hidden=false;
+}
+$('rcBtn').onclick=()=>$('rcFile').click();
+$('rcFile').onchange=e=>{const f=e.target.files[0];e.target.value='';if(f)readReceipt(f)};
+$('rcCancel').onclick=()=>{$('rcScreen').hidden=true};
+$('rcApply').onclick=()=>{
+  if(!cur){$('rcScreen').hidden=true;return}
+  const nm=$('rcName').value.trim(),dt=$('rcDate').value,cm=$('rcCoffee').value.trim(),bm=$('rcBake').value.trim(),tt=$('rcTotal').value.trim(),ad=$('rcAddr').value.trim();
+  if(nm){cur.name=nm;$('name').value=nm;$('pname').textContent=nm;drawMarkers()}
+  if(/^\d{4}-\d{2}-\d{2}$/.test(dt)){cur.date=dt;$('date').value=dt}
+  if(cm){cur.coffee.menu=cm;$('coffeeMenu').value=cm}
+  if(bm){cur.bake.menu=bm;$('bakeMenu').value=bm}
+  if(tt){cur.price=String(numOf(tt));$('totalIn').value=cur.price}
+  if(ad&&!String(cur.memo||'').includes(ad)){cur.memo=(cur.memo?cur.memo+'\n':'')+'주소: '+ad;$('memo').value=cur.memo}
+  $('rcScreen').hidden=true;$('rcStatus').textContent='영수증 내용을 넣었어요. 틀린 곳이 없는지 확인해 주세요.';
+  queueSave();
+};
 
 /* 여행 정보 화면 */
 const tFields=[['tTitle',t=>t.title,(t,v)=>t.title=v],['tStart',t=>t.start,(t,v)=>t.start=v],['tEnd',t=>t.end,(t,v)=>t.end=v],
