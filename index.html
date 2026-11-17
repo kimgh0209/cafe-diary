@@ -149,6 +149,11 @@ body.trip .ibtn{color:var(--trip)}
 .shophd{display:flex;align-items:center;justify-content:space-between;margin:18px 0 2px;font-size:13px;color:var(--muted)}
 .shophd:first-child{margin-top:0}
 .dpadd[hidden],.shoptop[hidden],.scroll[hidden]{display:none}
+.rcitem{display:flex;align-items:center;gap:6px;flex-wrap:wrap;padding:8px 0;border-bottom:1px solid var(--line)}
+.rcitem .rn{flex:1 1 55%;min-width:0;font-size:15px;font-weight:600;word-break:keep-all}
+.rcitem .rp{font-size:12px;color:var(--muted)}
+.rcitem .rk{border:1px solid var(--line);background:var(--bg);color:var(--fg);border-radius:999px;padding:6px 10px;font-size:12px;cursor:pointer;white-space:nowrap}
+.rcitem .rk.on{background:var(--accent);border-color:var(--accent);color:#fff}
 .rcbtn{width:100%;padding:12px;font-size:16px;margin-bottom:6px}
 .rcstatus{font-size:13px;color:var(--muted);min-height:18px;margin-bottom:10px;text-align:center}
 .rcstatus:empty{min-height:0;margin-bottom:6px}
@@ -511,6 +516,7 @@ body.trip .chip.on{background:var(--trip);border-color:var(--trip)}
         <div style="flex:2"><label class="lbl" for="name">가게 이름</label><input type="text" id="name"></div>
         <div><label class="lbl" for="date">방문일</label><input type="date" id="date"></div>
       </div>
+      <div style="margin-bottom:12px"><label class="lbl" for="addr">주소</label><input type="text" id="addr" placeholder="영수증을 읽으면 채워져요" autocomplete="off"></div>
       <div class="seg" id="kindSeg" style="margin-bottom:12px">
         <button type="button" data-k="cafe">카페</button><button type="button" data-k="bakery">빵집</button>
       </div>
@@ -521,7 +527,10 @@ body.trip .chip.on{background:var(--trip);border-color:var(--trip)}
       </div>
 
       <div style="margin-bottom:16px"><label class="lbl" for="totalIn">총 금액 (커피·빵 합쳐서)</label>
-        <div class="price"><input type="number" id="totalIn" inputmode="numeric" min="0" step="100" placeholder="0"><span>원</span></div></div>
+        <div class="price"><input type="text" id="totalIn" inputmode="numeric" placeholder="0" autocomplete="off"><span>원</span></div></div>
+      <div style="margin-bottom:16px"><label class="lbl">별점 <span class="score" id="rateScore"></span></label><div class="stars" id="rateStars"></div></div>
+      <div style="margin-bottom:16px"><label class="lbl">주차</label>
+        <div class="seg tseg" id="parkSeg"><button type="button" data-k="easy">🅿️ 주차하기 편해요</button><button type="button" data-k="hard">🚫 주차 힘들어요</button></div></div>
 
       <label class="lbl">사진</label>
       <div class="photos" id="photos"></div>
@@ -560,11 +569,12 @@ body.trip .chip.on{background:var(--trip);border-color:var(--trip)}
       <div style="margin-bottom:12px"><label class="lbl" for="rcName">가게 이름</label><input type="text" id="rcName"></div>
       <div class="row" style="margin-bottom:12px">
         <div><label class="lbl" for="rcDate">방문일</label><input type="date" id="rcDate"></div>
-        <div><label class="lbl" for="rcTotal">총 금액(원)</label><input type="number" id="rcTotal" inputmode="numeric"></div>
+        <div><label class="lbl" for="rcTotal">총 금액(원)</label><input type="text" id="rcTotal" inputmode="numeric" placeholder="0"></div>
       </div>
+      <div id="rcItemsWrap" style="margin-bottom:12px" hidden><label class="lbl">읽은 메뉴 (음료인지 빵·디저트인지 눌러서 바꿔요)</label><div id="rcItems"></div></div>
       <div style="margin-bottom:12px"><label class="lbl" for="rcCoffee">마신 메뉴</label><input type="text" id="rcCoffee"></div>
       <div style="margin-bottom:12px"><label class="lbl" for="rcBake">빵 · 디저트 메뉴</label><input type="text" id="rcBake"></div>
-      <div style="margin-bottom:12px"><label class="lbl" for="rcAddr">주소 (전체 메모에 적어 둬요)</label><input type="text" id="rcAddr"></div>
+      <div style="margin-bottom:12px"><label class="lbl" for="rcAddr">주소</label><input type="text" id="rcAddr"></div>
       <details style="margin-top:8px"><summary style="cursor:pointer;color:var(--muted);font-size:13px">읽은 글자 원문 보기</summary><pre id="rcRaw" style="white-space:pre-wrap;font-size:12px;color:var(--muted)"></pre></details>
       <div class="hint" style="color:var(--muted);font-size:12px;margin-top:10px">영수증 사진은 폰 안에서만 읽고 저장하거나 보내지 않아요.</div>
     </div>
@@ -985,7 +995,7 @@ body.trip .chip.on{background:var(--trip);border-color:var(--trip)}
 </div></nav>
 
 <script>
-const APP_VER='33';
+const APP_VER='34';
 const $=id=>document.getElementById(id);
 const ACID=[['매우 낮음','쌉쌀하고 묵직한 맛'],['낮음','고소하고 부드러운 맛'],['중간','균형 잡힌 산미'],['높음','과일처럼 상큼한 산미'],['매우 높음','레몬처럼 날카로운 산미']];
 const KIND={spot:{label:'명소',icon:'📍'},food:{label:'식당',icon:'🍽️'},cafe:{label:'카페',icon:'☕'},bakery:{label:'빵집',icon:'🥐'},lodging:{label:'숙소',icon:'🛏️'},move:{label:'교통',icon:'🚗'}};
@@ -1302,7 +1312,7 @@ $('q').oninput=()=>{
 $('q').onfocus=()=>{if($('results').children.length&&$('q').value.trim().length>=2)$('results').hidden=false};
 
 /* 목록 */
-function avg(p){const r=[p.coffee.rating,p.bake.rating].filter(Boolean);return r.length?r.reduce((a,b)=>a+b)/r.length:0}
+function avg(p){if(+p.rating)return +p.rating;const r=[p.coffee.rating,p.bake.rating].filter(Boolean);return r.length?r.reduce((a,b)=>a+b)/r.length:0}
 function total(p){return p.price!==undefined?(+p.price||0):(+p.coffee.price||0)+(+p.bake.price||0)}
 function setBar(title,back,act,actFn,backFn){
   $('listTitle').textContent=title;
@@ -1352,7 +1362,7 @@ function drawList(){
   if(!ps.length){box.innerHTML+='<div class="empty">'+(filtering()?'조건에 맞는 기록이 없어요.':'아직 기록이 없어요.<br>위 검색창이나 + 버튼으로 첫 가게를 추가해 보세요.')+'</div>';return}
   ps.forEach(p=>{const a=avg(p);
     box.appendChild(card(p.photos[0]||(p.kind==='bakery'?'🥐':'☕'),p.name||'이름 없는 곳',
-      [p.date,p.with,total(p)?won(total(p)):''].filter(Boolean).join(' · '),a?'★'.repeat(Math.round(a))+' '+a.toFixed(1):'',()=>openEdit(p.id)));
+      [p.date,p.with,total(p)?won(total(p)):'',p.park==='easy'?'주차 편해요':p.park==='hard'?'주차 힘들어요':''].filter(Boolean).join(' · '),a?'★'.repeat(Math.round(a))+' '+a.toFixed(1):'',()=>openEdit(p.id)));
   });
 }
 function drawTripList(){
@@ -1570,13 +1580,17 @@ const fields=[
   ['name',p=>p.name,(p,v)=>p.name=v],['date',p=>p.date,(p,v)=>p.date=v],['withWho',p=>p.with,(p,v)=>p.with=v],
   ['coffeeMenu',p=>p.coffee.menu,(p,v)=>p.coffee.menu=v],['coffeeNote',p=>p.coffee.note,(p,v)=>p.coffee.note=v],
   ['bakeMenu',p=>p.bake.menu,(p,v)=>p.bake.menu=v],['bakeNote',p=>p.bake.note,(p,v)=>p.bake.note=v],
-  ['totalIn',p=>{if(p.price!==undefined&&p.price!=='')return p.price;const s=(+p.coffee.price||0)+(+p.bake.price||0);return s||''},(p,v)=>p.price=v],['memo',p=>p.memo,(p,v)=>p.memo=v]
+  ['addr',p=>p.addr,(p,v)=>p.addr=v],['memo',p=>p.memo,(p,v)=>p.memo=v]
 ];
 fields.forEach(([id,get,set])=>{$(id).oninput=()=>{
   set(cur,$(id).value);queueSave();
   if(id==='name'){$('pname').textContent=cur.name||'새 기록';drawMarkers()}
 }});
 
+function priceInit(p){if(p.price!==undefined&&p.price!=='')return p.price;const s=(+p.coffee.price||0)+(+p.bake.price||0);return s||''}
+$('totalIn').oninput=()=>{const d=$('totalIn').value.replace(/\D/g,'');cur.price=d;$('totalIn').value=fmtNum(d);queueSave()};
+function drawPark(){document.querySelectorAll('#parkSeg button').forEach(b=>b.classList.toggle('on',b.dataset.k===(cur.park||'')))}
+document.querySelectorAll('#parkSeg button').forEach(b=>b.onclick=()=>{cur.park=cur.park===b.dataset.k?'':b.dataset.k;drawPark();queueSave()});
 function openEdit(id,isNew){
   cur=db.places.find(p=>p.id===id);if(!cur)return;
   cancelMode();
@@ -1584,6 +1598,8 @@ function openEdit(id,isNew){
   $('pname').textContent=cur.name||'새 기록';
   $('withList').innerHTML=[...new Set(db.places.map(p=>p.with).filter(Boolean))].map(v=>'<option value="'+esc(v)+'">').join('');
   mountPhotos($('photos'),$('file'),()=>cur.photos);
+  $('totalIn').value=fmtNum(priceInit(cur));drawPark();
+  stars($('rateStars'),()=>cur.rating||0,v=>cur.rating=v,$('rateScore'));
   drawKind();drawAcid();$('rcStatus').textContent='';
   setSaved('');$('editBody').scrollTop=0;
   armDelete($('delBtn'),()=>{toTrash('place',cur);db.places=db.places.filter(p=>p!==cur);cur=null;save();$('editScreen').hidden=true;drawMarkers();if(!$('listScreen').hidden)drawList()});
@@ -1605,7 +1621,21 @@ $('moveBtn').onclick=()=>{const p=cur;goMove(p,'editScreen',()=>openEdit(p.id),'
 /* 영수증 사진 → 글자 읽기(OCR, 폰 안에서 처리·사진은 저장·전송 안 함) → 이름·날짜·메뉴·총 금액 채우기
    글자 읽기는 Tesseract.js(처음 한 번 인터넷으로 내려받음)를 쓰고, 읽은 결과는 확인 화면에서 고친 뒤 적용해요. */
 const RC_NOISE=/합\s*계|총\s*액|총\s*금액|소계|부가세|과세|면세|공급가|카드|승인|결제|거스름|받을|받은|할인|포인트|적립|전화|TEL|사업자|대표|주소|번호|일시|영수증|POS|전표|단가|수량|금액|품명|메뉴|문의|감사|VAT|SUBTOTAL|TOTAL|CASH|현금|테이블|고객/i;
-const RC_BAKE=/빵|케이크|케익|쿠키|마카롱|마카롱|스콘|크로아상|크루아상|베이글|도넛|도너츠|와플|샌드위치|타르트|푸딩|브라우니|휘낭시에|까눌레|식빵|바게트|파이|롤|디저트|젤라또|아이스크림|토스트|크림치즈|머핀|파운드|티라미수|크로플|퀸아망/;
+const RC_BAKE=/빵|케이크|케익|케잌|쿠키|마카롱|스콘|크로아상|크루아상|베이글|도넛|도너츠|와플|샌드위치|샌드|타르트|푸딩|브라우니|휘낭시에|피낭시에|까눌레|카눌레|식빵|바게트|파이|토스트|머핀|파운드|티라미수|크로플|아이스크림|젤라또|젤라토|빙수|샐러드|파스타|피자|롤|번|꽈배기|약과|떡|찰떡|모찌|디저트|구움과자|초콜릿|초콜렛|그라놀라|요거트볼|깜빠뉴|치아바타|프레첼|쉬폰|마들렌|스펀지|슈크림|쿠키슈|크림슈|에끌레어|레드벨벳|벨벳|버터바|밀푀유|카스테라|호두과자|붕어빵|핫도그|도그|감자튀김|프렌치프라이|소시지|베이컨|오믈렛|리조또|볶음밥|덮밥|라면/;
+const RC_DRINK_END=/(라떼|라테|커피|아메리카노|슈페너|에스프레소|카푸치노|마끼아또|마키아토|플랫화이트|콜드브루|더치|모카|프라푸치노|프라페|스무디|주스|쥬스|에이드|티|차|밀크|우유|쉐이크|셰이크|소다|토닉|하이볼|맥주|와인|음료|리프레셔|슬러시|ADE|LATTE|COFFEE|TEA)$/i;
+const RC_DRINK=/아메리카노|라떼|라테|카푸치노|에스프레소|플랫화이트|콜드브루|더치|드립|커피|모카|마끼아또|마키아토|아인슈페너|돌체|디카페인|에이드|녹차|홍차|허브티|캐모마일|페퍼민트|스무디|주스|쥬스|프라푸치노|프라페|쉐이크|셰이크|밀크티|우유|두유|핫초코|코코아|오트|콜라|사이다|탄산|생수|말차|토닉|하이볼|맥주|와인|식혜|수정과|슬러시|리프레셔|음료|아이스티|버블티|자몽|유자|레몬|청귤|ADE|LATTE|COFFEE|TEA|아샷추|샷/i;
+// 메뉴 이름이 음료인지 빵·디저트인지 맞춰 보기: ①끝말이 음료 말이면 음료 ②빵·디저트 말이 있으면 빵 ③음료 말이 있으면 음료 ④모르면 음료(카페에서 가장 흔함)
+function classifyItem(name){
+  const n=String(name||'').replace(/\(.*?\)|\[.*?\]/g,' ').replace(/아이스(?!크림)|\b(HOT|ICE|ICED|REG|R|L|S|M|T|G)\b|핫|따뜻한|뜨거운|레귤러|라지|톨|그란데|벤티|샷추가|사이즈업|추가|변경|세트/gi,' ').replace(/[\d.×x*]+$/,'').replace(/\s+/g,'').trim();
+  if(!n)return 'drink';
+  if(RC_DRINK_END.test(n))return 'drink';
+  if(RC_BAKE.test(n))return 'bake';
+  if(RC_DRINK.test(n))return 'drink';
+  return 'drink';
+}
+const rcFmt=i=>i.n+(i.qty>1?' ×'+i.qty:'');
+function menusOf(items){return {coffee:items.filter(i=>i.kind!=='bake').map(rcFmt).join(', '),bake:items.filter(i=>i.kind==='bake').map(rcFmt).join(', ')}}
+const fmtNum=n=>String(n).replace(/\D/g,'').replace(/^0+(?=\d)/,'').replace(/\B(?=(\d{3})+(?!\d))/g,',');
 const numOf=s=>{const v=parseInt(String(s).replace(/[^\d]/g,''),10);return isFinite(v)?v:0};
 function parseReceipt(raw){
   const lines=String(raw||'').split(/\r?\n/).map(l=>l.replace(/[|｜_]+/g,' ').replace(/\s+/g,' ').trim()).filter(Boolean);
@@ -1650,10 +1680,9 @@ function parseReceipt(raw){
     if(hit.length){res.total=Math.max(...hit);break}
   }
   if(!res.total&&res.items.length)res.total=res.items.reduce((s,i)=>s+i.price,0);
-  // 커피/빵 나누기
-  const fmt=i=>i.n+(i.qty>1?' ×'+i.qty:'');
-  res.coffee=res.items.filter(i=>!RC_BAKE.test(i.n)).map(fmt).join(', ');
-  res.bake=res.items.filter(i=>RC_BAKE.test(i.n)).map(fmt).join(', ');
+  // 음료 / 빵·디저트 나누기
+  res.items.forEach(i=>i.kind=classifyItem(i.n));
+  Object.assign(res,menusOf(res.items));
   return res;
 }
 let tessLoading=null;
@@ -1702,10 +1731,29 @@ async function readReceipt(file){
   }finally{if(worker)try{await worker.terminate()}catch(e){}}
 }
 let rcRes=null;
+function drawRcItems(){
+  const box=$('rcItems');box.innerHTML='';
+  const items=(rcRes&&rcRes.items)||[];
+  $('rcItemsWrap').hidden=!items.length;
+  items.forEach((it,i)=>{
+    const r=document.createElement('div');r.className='rcitem';r.dataset.i=i;
+    const n=document.createElement('span');n.className='rn';n.textContent=rcFmt(it);
+    const p=document.createElement('span');p.className='rp';p.textContent=fmtNum(it.price)+'원';
+    const d=document.createElement('button');d.type='button';d.className='rk'+(it.kind==='bake'?'':' on');d.dataset.k='drink';d.textContent='☕ 음료';
+    const b=document.createElement('button');b.type='button';b.className='rk'+(it.kind==='bake'?' on':'');b.dataset.k='bake';b.textContent='🥐 빵·디저트';
+    r.append(n,p,d,b);box.appendChild(r);
+  });
+}
+$('rcItems').onclick=e=>{
+  const t=e.target.closest('button[data-k]');if(!t||!rcRes)return;
+  const it=rcRes.items[+t.closest('.rcitem').dataset.i];it.kind=t.dataset.k;
+  const m=menusOf(rcRes.items);$('rcCoffee').value=m.coffee;$('rcBake').value=m.bake;drawRcItems();
+};
+$('rcTotal').oninput=()=>{$('rcTotal').value=fmtNum($('rcTotal').value)};
 function showReceiptResult(r,raw){
   rcRes=r;
   $('rcName').value=r.name;$('rcDate').value=r.date;$('rcCoffee').value=r.coffee;$('rcBake').value=r.bake;
-  $('rcTotal').value=r.total||'';$('rcAddr').value=r.addr;$('rcRaw').textContent=raw;
+  $('rcTotal').value=r.total?fmtNum(r.total):'';$('rcAddr').value=r.addr;$('rcRaw').textContent=raw;drawRcItems();
   const found=[r.name,r.date,r.coffee,r.bake,r.total,r.addr].filter(Boolean).length;
   $('rcHint').textContent=found?'읽은 내용이에요. 틀린 곳은 고친 뒤 [적용]을 눌러 주세요. 비워 둔 칸은 기록에 반영하지 않아요.':'읽은 글자에서 알아낸 내용이 없어요. 아래 원문을 보고 직접 적거나 다시 찍어 보세요.';
   $('rcScreen').hidden=false;
@@ -1720,8 +1768,8 @@ $('rcApply').onclick=()=>{
   if(/^\d{4}-\d{2}-\d{2}$/.test(dt)){cur.date=dt;$('date').value=dt}
   if(cm){cur.coffee.menu=cm;$('coffeeMenu').value=cm}
   if(bm){cur.bake.menu=bm;$('bakeMenu').value=bm}
-  if(tt){cur.price=String(numOf(tt));$('totalIn').value=cur.price}
-  if(ad&&!String(cur.memo||'').includes(ad)){cur.memo=(cur.memo?cur.memo+'\n':'')+'주소: '+ad;$('memo').value=cur.memo}
+  if(tt){cur.price=String(numOf(tt));$('totalIn').value=fmtNum(cur.price)}
+  if(ad){cur.addr=ad;$('addr').value=ad}
   $('rcScreen').hidden=true;$('rcStatus').textContent='영수증 내용을 넣었어요. 틀린 곳이 없는지 확인해 주세요.';
   queueSave();
 };
