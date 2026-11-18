@@ -124,6 +124,9 @@ body.trip .ibtn{color:var(--trip)}
 .pkh.pks{font-weight:700;color:inherit;margin:14px 0 8px}
 .pkc.own{border-color:#d4a017;border-width:2px}
 .pkc.pub{border-color:#2f6f73}
+.pkc.shn{border-color:#3b6fe0;border-width:2px}
+.pkc .n i.sh{background:#3b6fe0}
+.pkc .l a.nv{background:#03c75a;border-color:#03c75a;color:#fff;font-weight:600}
 .grform{flex:none;display:grid;gap:8px;padding:8px max(12px,env(safe-area-inset-right,0px)) calc(10px + env(safe-area-inset-bottom,0px)) max(12px,env(safe-area-inset-left,0px));border-top:1px solid var(--line);background:var(--panel)}
 .grform .r{display:flex;gap:8px;align-items:center}
 .grform label{flex:none;font-size:13px;color:var(--muted)}
@@ -1027,7 +1030,7 @@ body.trip .chip.on{background:var(--trip);border-color:var(--trip)}
 </div></nav>
 
 <script>
-const APP_VER='39';
+const APP_VER='40';
 const $=id=>document.getElementById(id);
 const ACID=[['매우 낮음','쌉쌀하고 묵직한 맛'],['낮음','고소하고 부드러운 맛'],['중간','균형 잡힌 산미'],['높음','과일처럼 상큼한 산미'],['매우 높음','레몬처럼 날카로운 산미']];
 const KIND={spot:{label:'명소',icon:'📍'},food:{label:'식당',icon:'🍽️'},cafe:{label:'카페',icon:'☕'},bakery:{label:'빵집',icon:'🥐'},lodging:{label:'숙소',icon:'🛏️'},move:{label:'교통',icon:'🚗'}};
@@ -3197,7 +3200,8 @@ const pkSafe=u=>/^https?:\/\//.test(u||'')?u:'';
 function pkChips(){
   const c=$('pkChips');
   c.innerHTML=[300,500,1000,2000].map(r=>'<button class="chip'+(r===pkRad?' on':'')+'" data-r="'+r+'" type="button">'+pkDist(r)+'</button>').join('')+
-    '<button class="chip'+(pkPub?' on':'')+'" data-pub="1" type="button">공영만</button>';
+    '<button class="chip'+(pkPub?' on':'')+'" data-pub="1" type="button">공영만</button>'+
+    '<button class="chip'+(pkCardOn()?' on':'')+'" data-card="1" type="button">💳 신한</button>';
 }
 function pkHome(msg){
   const ws=db.wishes.filter(w=>w.lat&&w.name);
@@ -3247,6 +3251,20 @@ function pkMatch(d){
   }
   return best;
 }
+/* 신한카드 RPM+ Platinum# 무료주차 제휴 주차장(비공식 정리 32곳, 2024년 신한카드 공지로 일부 교체 반영): [이름,위도,경도,운영시간,지역] */
+const SHINHAN=[["서울역 2주차장",37.54912,126.97048,"24시간","서울역 KTX"],["서울역 1롯데마트 주차장",37.55473,126.96953,"24시간","서울역 KTX"],["광명역 C주차장",37.41636,126.88488,"24시간","광명역 KTX"],["광명역 D주차장",37.4134,126.88315,"24시간","광명역 KTX"],["울산역 B주차장",35.5515,129.13863,"24시간","울산역 KTX"],["부산역 초량동 주차장",35.11941,129.0385,"24시간","부산역 KTX"],["광주송정역 후면 주차장",35.1364,126.78786,"24시간","광주송정역 KTX"],["명동 눈스퀘어(타워)",37.56344,126.98291,"24시간","서울 중구"],["센트럴플레이스",37.56092,126.96703,"05:00~24:00","서울 중구"],["성동공고 공영주차장",37.56936,127.01728,"24시간","서울 중구"],["SC제일은행(본점)",37.57113,126.98244,"24시간","서울 종로구"],["오라카이 스위츠",37.57299,126.98734,"08:00~23:00","서울 종로구"],["트윈트리타워 주차장",37.57545,126.97978,"09:00~24:00","서울 종로구"],["오피시아",37.5697,126.97491,"07:00~23:00","서울 종로구"],["영등포 주차장",37.5161,126.90296,"24시간","서울 영등포구"],["사당현진빌딩",37.48201,126.98149,"07:00~23:00(평일)","서울 동작구"],["선릉역 대우아이빌 주차장",37.5045,127.05159,"00:00~23:00","서울 강남구"],["대치타워 주차장",37.50549,127.05347,"08:00~21:00","서울 강남구"],["아이콘삼성",37.50766,127.05558,"24시간","서울 강남구"],["탑빌딩",37.41257,127.12989,"평일 08:00~22:00, 주말 11:00~15:00","경기 성남"],["우리들공원주차장",36.32742,127.42546,"24시간","대전 중구"],["대전 둔산코어타워",36.35112,127.37523,"24시간","대전 서구"],["천안아산 미소지움",36.78919,127.10345,"24시간","충남 아산"],["전주 고속버스터미널",35.83449,127.12928,"24시간","전주"],["CGV 대구한일극장",35.87041,128.59532,"24시간","대구 중구"],["대구 삼성생명",35.86632,128.5928,"24시간","대구 중구"],["파라다이스 주차장",36.01201,129.35034,"24시간","포항"],["농협은행 성남동지점",35.55629,129.3205,"01:00~24:00","울산 중구"],["금아드림스퀘어",35.54861,129.13921,"24시간","울산 울주"],["NC백화점 해운대점",35.17061,129.17708,"24시간","부산 해운대"],["롯데월드 어드벤처 부산",35.19611,129.21334,"09:30~20:00","부산 기장"],["로얄팰리스 서면 1·2차",35.1498,129.05829,"24시간","부산 부산진"]];
+const pkMeters=(a,b,c,d)=>{const R=6371000,p=Math.PI/180,x=(d-b)*p*Math.cos((a+c)/2*p),y=(c-a)*p;return Math.round(Math.hypot(x,y)*R)};
+const pkCardOn=()=>{try{return localStorage.getItem('fam_pkcard')!=='0'}catch(e){return true}};
+function pkNavLink(lat,lng,name,label){return '<a href="#" class="nv" data-nv="'+lat+','+lng+','+encodeURIComponent(name)+'">'+label+'</a>'}
+// 네이버지도 앱 길찾기(자동차). 앱이 없으면 잠시 뒤 웹 길찾기로
+function pkOpenNaver(s){
+  const [lat,lng,nm]=s.split(','),name=decodeURIComponent(nm);
+  const app='nmap://route/car?dlat='+lat+'&dlng='+lng+'&dname='+encodeURIComponent(name)+'&appname=io.github.kimgh0209.cafe-diary';
+  const web='https://map.naver.com/p/directions/-/'+lng+','+lat+','+encodeURIComponent(name)+'/-/car';
+  const t=setTimeout(()=>{if(!document.hidden)window.open(web,'_blank')},1600);
+  document.addEventListener('visibilitychange',()=>clearTimeout(t),{once:true});
+  location.href=app;
+}
 function pkDraw(){
   pkList.forEach(d=>{d._m=pkMatch(d)});
   const isPub=d=>/공영/.test((d.category_name||'')+d.place_name)||!!(d._m&&d._m[3]===0);
@@ -3271,9 +3289,24 @@ function pkDraw(){
       })()+
       '<div class="m">🚶 목적지까지 '+pkDist(m)+' · 걸어서 약 '+pkWalk(m)+'분</div>'+
       '<div class="a">'+esc(d.road_address_name||d.address_name||'')+'</div>'+
-      '<div class="l">'+(url?'<a href="'+esc(url)+'" target="_blank" rel="noopener">요금·운영시간 (카카오맵)</a>':'')+'<a href="'+esc(nav)+'" target="_blank" rel="noopener">길찾기</a>'+(d.phone?'<a href="tel:'+esc(d.phone)+'">📞 '+esc(d.phone)+'</a>':'')+'</div></div>';
+      '<div class="l">'+(url?'<a href="'+esc(url)+'" target="_blank" rel="noopener">요금·운영시간 (카카오맵)</a>':'')+pkNavLink(d.y,d.x,d.place_name,'🧭 네이버지도 길찾기')+'<a href="'+esc(nav)+'" target="_blank" rel="noopener">카카오 길찾기</a>'+(d.phone?'<a href="tel:'+esc(d.phone)+'">📞 '+esc(d.phone)+'</a>':'')+'</div></div>';
   };
   const sec=(t,a)=>a.length?'<div class="pkh pks">'+t+' ('+a.length+')</div>'+a.map(card).join(''):'';
+  if(pkCardOn()){
+    const sh=SHINHAN.map(r=>({r,m:pkMeters(pkDest.lat,pkDest.lng,r[1],r[2])})).sort((a,b)=>a.m-b.m);
+    const inn=sh.filter(x=>x.m<=pkRad);
+    if(inn.length){
+      h+='<div class="pkh pks">💳 신한 RPM 제휴 주차장 ('+inn.length+') — 먼저 확인해요</div>'+inn.map(x=>
+        '<div class="pkc shn"><div class="n">'+esc(x.r[0])+'<i class="sh">신한 제휴</i></div>'+
+        '<div class="m">🚶 목적지까지 '+pkDist(x.m)+' · 걸어서 약 '+pkWalk(x.m)+'분</div>'+
+        '<div class="m">🕘 '+esc(x.r[3])+' · '+esc(x.r[4])+'</div>'+
+        '<div class="l">'+pkNavLink(x.r[1],x.r[2],x.r[0],'🧭 네이버지도 길찾기')+'</div></div>').join('')+
+        '<div class="hint" style="color:var(--muted);font-size:12px">전월 이용실적 등 카드 조건이 있어요. 이 목록은 비공식 정리라 바뀌었을 수 있으니 이용 전 신한카드(1544-7000)로 확인하세요.</div>';
+    }else{
+      const n=sh[0];
+      h+='<div class="pkh pks">💳 신한 RPM 제휴 주차장</div><div class="pkh">반경 '+pkDist(pkRad)+' 안에는 제휴 주차장이 없어요. '+(n?'가장 가까운 곳은 '+esc(n.r[0])+' ('+pkDist(n.m)+')예요. ':'')+'아래 <b>공영주차장</b>으로 가 보세요 👇</div>';
+    }
+  }
   h+=sec('🏠 목적지 자체 주차장',own)+sec('🔌 공영주차장 · 전기차 할인 확인',pub)+sec('🅿️ 그 밖의 주차장 (민영 등)',oth);
   h+='<div class="hint" style="color:var(--muted);font-size:12px;margin-top:8px">걷는 시간은 직선거리로 어림한 값이에요. 🕘💰는 공공데이터포털(전국주차장정보표준데이터, '+esc((pkData&&pkData.d)||'')+' 기준) 자료라 실제와 다를 수 있어요. 자료가 없는 곳은 카카오맵 링크로 확인해요.</div>';
   $('pkBody').innerHTML=h;
@@ -3284,10 +3317,13 @@ $('pkGo').onclick=()=>{const q=$('pkQ').value.trim();if(q)pkSearchDest(q)};
 $('pkQ').onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();$('pkGo').click()}};
 $('pkChips').onclick=e=>{
   const b=e.target.closest('.chip');if(!b)return;
-  if(b.dataset.r)pkRad=+b.dataset.r;else pkPub=!pkPub;
+  if(b.dataset.r)pkRad=+b.dataset.r;
+  else if(b.dataset.card){try{localStorage.setItem('fam_pkcard',pkCardOn()?'0':'1')}catch(e){}}
+  else pkPub=!pkPub;
   pkChips();if(pkDest)pkLoad();
 };
 $('pkBody').onclick=e=>{
+  const nv=e.target.closest('.nv');if(nv){e.preventDefault();return pkOpenNaver(nv.dataset.nv)}
   const w=e.target.closest('[data-w]'),d=e.target.closest('[data-d]');
   if(w){const x=db.wishes.find(v=>v.id===w.dataset.w);if(x)pkPickDest({name:x.name,lat:x.lat,lng:x.lng,addr:x.addr})}
   else if(d){const c=($('pkBody')._cand||[])[+d.dataset.d];if(c)pkPickDest({name:c.place_name,lat:+c.y,lng:+c.x,addr:c.road_address_name||c.address_name})}
