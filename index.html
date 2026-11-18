@@ -109,6 +109,11 @@ body.trip .ibtn{color:var(--trip)}
 .home .menu .mbtn .t{font-size:11.5px;letter-spacing:-.03em}
 .home .menu .mbtn .s{font-size:11px}
 .mbtn.grow .ic{background:#7a6bd6}
+.mbtn.park{position:absolute;left:max(20px,env(safe-area-inset-left,0px));bottom:calc(22px + env(safe-area-inset-bottom,0px));width:56px;padding:9px 1px 7px;gap:5px;border-radius:14px;z-index:5}
+.mbtn.park .ic{width:34px;height:34px;border-radius:10px;background:#3b6fe0}
+.mbtn.park .ic svg{width:20px;height:20px}
+.mbtn.park .t{font-size:11.5px}
+.mbtn.park .s{font-size:11px}
 .pkc{border:1px solid var(--line);background:var(--panel);border-radius:12px;padding:10px 12px;margin-bottom:8px}
 .pkc .n{font-weight:600;font-size:14px;word-break:keep-all}
 .pkc .n i{font-style:normal;font-size:11px;font-weight:600;color:#fff;background:#2f6f73;border-radius:999px;padding:1px 7px;margin-left:6px;vertical-align:1px}
@@ -677,7 +682,7 @@ body.trip .chip.on{background:var(--trip);border-color:var(--trip)}
       <div class="ttlbox"><h1 class="ttl" aria-label="우리가족기록♡"><span style="--c:#ff4d5e" aria-hidden="true">우</span><span style="--c:#ff9a2e" aria-hidden="true">리</span><span style="--c:#ffd21f" aria-hidden="true">가</span><span style="--c:#4cd36b" aria-hidden="true">족</span><span style="--c:#3db8ff" aria-hidden="true">기</span><span style="--c:#7a7bff" aria-hidden="true">록</span><span style="--c:#d36bff" aria-hidden="true">♡</span></h1><div class="date" id="homeDate"></div>
         <button class="dd" id="ddPill" type="button" hidden aria-label="기념일 보기"><span id="ddName"></span><b id="ddVal"></b></button>
         <button class="memory" id="homeMemory" type="button" hidden><span>📅</span><span class="y"></span><span class="t"></span></button>
-        <button class="memory" id="goFood" type="button">🎲 오늘 뭐 먹지?</button><button class="memory" id="goPark" type="button">🅿️ 주차 정보</button></div>
+        <button class="memory" id="goFood" type="button">🎲 오늘 뭐 먹지?</button></div>
       <div class="btns">
         <button class="cam" id="homeStat" type="button" aria-label="통계">
           <svg viewBox="0 0 24 24"><path d="M5 20V11M12 20V4M19 20v-6"/></svg></button>
@@ -709,6 +714,9 @@ body.trip .chip.on{background:var(--trip);border-color:var(--trip)}
     </div>
 
   </div>
+  <button class="mbtn park" id="goPark" type="button" aria-label="주차 정보">
+    <span class="ic"><svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="3"/><path d="M10 17V8h3.2a2.7 2.7 0 0 1 0 5.4H10"/></svg></span>
+    <span><div class="t">주차</div><div class="s">정보</div></span></button>
 </div>
 
 <!-- 설정 -->
@@ -1030,7 +1038,7 @@ body.trip .chip.on{background:var(--trip);border-color:var(--trip)}
 </div></nav>
 
 <script>
-const APP_VER='40';
+const APP_VER='41';
 const $=id=>document.getElementById(id);
 const ACID=[['매우 낮음','쌉쌀하고 묵직한 맛'],['낮음','고소하고 부드러운 맛'],['중간','균형 잡힌 산미'],['높음','과일처럼 상큼한 산미'],['매우 높음','레몬처럼 날카로운 산미']];
 const KIND={spot:{label:'명소',icon:'📍'},food:{label:'식당',icon:'🍽️'},cafe:{label:'카페',icon:'☕'},bakery:{label:'빵집',icon:'🥐'},lodging:{label:'숙소',icon:'🛏️'},move:{label:'교통',icon:'🚗'}};
