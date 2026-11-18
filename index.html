@@ -1027,7 +1027,7 @@ body.trip .chip.on{background:var(--trip);border-color:var(--trip)}
 </div></nav>
 
 <script>
-const APP_VER='38';
+const APP_VER='39';
 const $=id=>document.getElementById(id);
 const ACID=[['매우 낮음','쌉쌀하고 묵직한 맛'],['낮음','고소하고 부드러운 맛'],['중간','균형 잡힌 산미'],['높음','과일처럼 상큼한 산미'],['매우 높음','레몬처럼 날카로운 산미']];
 const KIND={spot:{label:'명소',icon:'📍'},food:{label:'식당',icon:'🍽️'},cafe:{label:'카페',icon:'☕'},bakery:{label:'빵집',icon:'🥐'},lodging:{label:'숙소',icon:'🛏️'},move:{label:'교통',icon:'🚗'}};
@@ -3223,11 +3223,33 @@ function pkLoad(){
   new K.services.Places().categorySearch('PK6',(data,st)=>{
     if(st===K.services.Status.ZERO_RESULT||(st===K.services.Status.OK&&!data.length)){pkList=[];return pkDraw()}
     if(st!==K.services.Status.OK)return pkHome('주차장을 불러오지 못했어요. 잠시 뒤 다시 해 보세요.');
-    pkList=data;pkDraw();
+    pkList=data;pkLoadData().then(pkDraw);
   },{location:new K.LatLng(pkDest.lat,pkDest.lng),radius:pkRad,sort:K.services.SortBy.DISTANCE});
 }
+/* 공공데이터(전국주차장정보표준데이터) parking.json: [이름,위도,경도,0공영|1민영,구획수,운영시간,요금,특기사항] */
+let pkData=null,pkGrid=null,pkDataP=null;
+function pkLoadData(){
+  if(!pkDataP)pkDataP=fetch('./parking.json').then(r=>r.json()).then(j=>{
+    pkData=j;pkGrid={};
+    j.r.forEach((r,i)=>{const k=Math.round(r[1]*1000)+','+Math.round(r[2]*1000);(pkGrid[k]=pkGrid[k]||[]).push(i)});
+  }).catch(()=>{pkDataP=null});
+  return pkDataP;
+}
+function pkMatch(d){
+  if(!pkGrid)return null;
+  const lat=+d.y,lng=+d.x,cy=Math.round(lat*1000),cx=Math.round(lng*1000);
+  const nn=s=>String(s||'').replace(/\s|주차장|공영|노외|노상|부설/g,'');
+  const b=nn(d.place_name);let best=null,bd=1e9;
+  for(let a=-1;a<=1;a++)for(let c=-1;c<=1;c++)for(const i of pkGrid[(cy+a)+','+(cx+c)]||[]){
+    const r=pkData.r[i],dist=Math.hypot((r[1]-lat)*111000,(r[2]-lng)*88000),n=nn(r[0]);
+    const sim=n&&b&&(n.includes(b)||b.includes(n));
+    if(dist<=(sim?120:35)&&dist<bd){bd=dist;best=r}
+  }
+  return best;
+}
 function pkDraw(){
-  const isPub=d=>/공영/.test((d.category_name||'')+d.place_name);
+  pkList.forEach(d=>{d._m=pkMatch(d)});
+  const isPub=d=>/공영/.test((d.category_name||'')+d.place_name)||!!(d._m&&d._m[3]===0);
   const nm=s=>String(s||'').replace(/\s/g,'');
   const dn=nm(pkDest.name),da=nm(pkDest.addr);
   // 목적지 자체 주차장: 이름에 목적지 이름이 들어 있거나 주소가 같음
@@ -3239,14 +3261,21 @@ function pkDraw(){
   const card=d=>{
     const m=+d.distance||0,url=pkSafe(d.place_url),nav='https://map.kakao.com/link/to/'+encodeURIComponent(d.place_name)+','+d.y+','+d.x;
     return '<div class="pkc'+(isOwn(d)?' own':isPub(d)?' pub':'')+'"><div class="n">'+esc(d.place_name)+(isPub(d)?'<i>공영</i>':'<i class="pv">민영·기타</i>')+'</div>'+
-      (isPub(d)?'<div class="fee">🔌 전기차 할인 대상일 수 있어요 (주차장마다 달라서 카카오맵·현장 안내 확인)</div>':'')+
+      (()=>{
+        const r=d._m,ev=r&&/친환경|저공해|전기/.test(r[7]);
+        let s='';
+        if(isPub(d))s+=ev?'<div class="fee">🔌 전기차·친환경차 할인 안내: '+esc(r[7])+'</div>'
+          :(r&&r[7]?'<div class="fee">🔌 할인 안내: '+esc(r[7])+' (전기차 해당 여부는 확인)</div>':'<div class="fee">🔌 전기차 할인 대상일 수 있어요 (주차장마다 달라서 카카오맵·현장 안내 확인)</div>');
+        if(r)s+='<div class="m">🕘 '+esc(r[5]||'운영시간 정보 없음')+'</div><div class="m">💰 '+esc(r[6]||'요금 정보 없음')+(r[4]?' · '+esc(r[4])+'면':'')+'</div>';
+        return s;
+      })()+
       '<div class="m">🚶 목적지까지 '+pkDist(m)+' · 걸어서 약 '+pkWalk(m)+'분</div>'+
       '<div class="a">'+esc(d.road_address_name||d.address_name||'')+'</div>'+
       '<div class="l">'+(url?'<a href="'+esc(url)+'" target="_blank" rel="noopener">요금·운영시간 (카카오맵)</a>':'')+'<a href="'+esc(nav)+'" target="_blank" rel="noopener">길찾기</a>'+(d.phone?'<a href="tel:'+esc(d.phone)+'">📞 '+esc(d.phone)+'</a>':'')+'</div></div>';
   };
   const sec=(t,a)=>a.length?'<div class="pkh pks">'+t+' ('+a.length+')</div>'+a.map(card).join(''):'';
   h+=sec('🏠 목적지 자체 주차장',own)+sec('🔌 공영주차장 · 전기차 할인 확인',pub)+sec('🅿️ 그 밖의 주차장 (민영 등)',oth);
-  h+='<div class="hint" style="color:var(--muted);font-size:12px;margin-top:8px">걷는 시간은 직선거리로 어림한 값이에요. 요금·운영시간은 카카오맵에서 확인해요.</div>';
+  h+='<div class="hint" style="color:var(--muted);font-size:12px;margin-top:8px">걷는 시간은 직선거리로 어림한 값이에요. 🕘💰는 공공데이터포털(전국주차장정보표준데이터, '+esc((pkData&&pkData.d)||'')+' 기준) 자료라 실제와 다를 수 있어요. 자료가 없는 곳은 카카오맵 링크로 확인해요.</div>';
   $('pkBody').innerHTML=h;
 }
 $('goPark').onclick=()=>{pkChips();if(pkDest)pkLoad();else pkHome();$('parkScreen').hidden=false};
