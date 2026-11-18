@@ -742,12 +742,8 @@ body.trip .chip.on{background:var(--trip);border-color:var(--trip)}
         <div class="setgrp"><button class="btn on" id="setPushOn" type="button" hidden>켜기</button><button class="btn" id="setPushTest" type="button" hidden>테스트</button><button class="btn" id="setPushOff" type="button" hidden>끄기</button></div>
       </div>
       <div class="setrow" style="flex-wrap:wrap">
-        <div class="sl" style="flex:1"><b>포켓몬보드로 식단 보내기 (이 폰)</b><span id="setPkState"></span></div>
-        <div style="width:100%;display:grid;gap:6px;margin-top:6px">
-          <input type="text" id="pkRepo" placeholder="저장소 (예: kimgh0209/family-board)" autocomplete="off" aria-label="포켓몬보드 저장소">
-          <input type="password" id="pkToken" placeholder="접속 키 (GitHub · 이 폰에만 저장돼요)" autocomplete="off" aria-label="GitHub 접속 키">
-          <div class="setgrp"><button class="btn on" id="pkOn" type="button">연결하고 지금 보내기</button><button class="btn" id="pkOff" type="button" hidden>끄기</button></div>
-        </div>
+        <div class="sl" style="flex:1"><b>포켓몬보드로 식단 보내기</b><span id="setPkState"></span></div>
+        <div class="setgrp"><button class="btn on" id="pkOn" type="button">지금 보내기</button></div>
       </div>
       <div class="setrow">
         <div class="sl"><b>생리주기 표시</b><span>이 폰에서만 적용돼요. 민감한 정보라 서로 이야기한 뒤 켜 주세요</span></div>
@@ -1003,7 +999,7 @@ body.trip .chip.on{background:var(--trip);border-color:var(--trip)}
 </div></nav>
 
 <script>
-const APP_VER='35';
+const APP_VER='36';
 const $=id=>document.getElementById(id);
 const ACID=[['매우 낮음','쌉쌀하고 묵직한 맛'],['낮음','고소하고 부드러운 맛'],['중간','균형 잡힌 산미'],['높음','과일처럼 상큼한 산미'],['매우 높음','레몬처럼 날카로운 산미']];
 const KIND={spot:{label:'명소',icon:'📍'},food:{label:'식당',icon:'🍽️'},cafe:{label:'카페',icon:'☕'},bakery:{label:'빵집',icon:'🥐'},lodging:{label:'숙소',icon:'🛏️'},move:{label:'교통',icon:'🚗'}};
@@ -3223,15 +3219,12 @@ $('planBody').onclick=e=>{
 };
 $('goShop').onclick=()=>{planMon=mondayOf(today());drawPlan();$('shopScreen').hidden=false};
 $('shopBack').onclick=()=>{$('shopScreen').hidden=true;drawHome()};
-/* 포켓몬보드로 식단 보내기: 식단표에서 적은 메뉴 이름을 가족 대시보드(GitHub Pages)의 board.json 'menu' 줄로 올려요.
-   보드가 읽는 형식: "2026-11-18 저녁 메뉴이름". 우리 구역은 표시 줄(# ▼ … # ▲) 사이에만 쓰고, 그 밖의 줄(보드에서 직접 적은 것)은 그대로 둬요.
-   이 폰에 저장한 GitHub 접속 키로만 동작하고(코드·서버에는 안 들어감), 키가 없으면 아무것도 보내지 않아요. */
-const PK_REPO_KEY='fam_pkrepo',PK_TOKEN_KEY='fam_pktoken',PK_HASH_KEY='fam_pkhash',PK_AT_KEY='fam_pkat';
-const PK_BEGIN='# ▼ 식단표 앱이 자동으로 쓰는 줄 (직접 고치지 마세요)',PK_END='# ▲ 식단표 앱 끝';
+/* 포켓몬보드로 식단 보내기: 서버 함수(boardsync)가 서버에 저장된 식단의 메뉴 이름을 가족 대시보드(GitHub Pages)의 board.json 'menu' 줄로 써 줘요.
+   누가 식단을 적어도(남편·아내 폰 모두) 앱이 이 함수를 불러요. GitHub 접속 키는 폰·코드에 없고 서버(Supabase 비밀 값)에만 있어요.
+   보드가 읽는 형식: "2026-11-18 저녁 메뉴이름" (재료는 안 보냄). 함수가 아직 설치 전이면 조용히 건너뛰고 6시간 뒤에 다시 물어봐요. */
+const PK_HASH_KEY='fam_pkhash',PK_AT_KEY='fam_pkat',PK_FAIL_KEY='fam_pkfail';
 const pkGet=k=>{try{return localStorage.getItem(k)||''}catch(e){return ''}};
 const pkSet=(k,v)=>{try{v?localStorage.setItem(k,v):localStorage.removeItem(k)}catch(e){}};
-const pkB64=t=>btoa(unescape(encodeURIComponent(t)));
-const pkUnB64=t=>decodeURIComponent(escape(atob(String(t).replace(/\s/g,''))));
 var pkTimer=null;
 function pkMenuLines(){
   const from=dAdd(today(),-7);
@@ -3239,62 +3232,45 @@ function pkMenuLines(){
     .sort((a,b)=>a.d.localeCompare(b.d)||SLOTS.findIndex(x=>x[0]===a.s)-SLOTS.findIndex(x=>x[0]===b.s))
     .map(m=>m.d+' '+slotName(m.s)+' '+m.name.trim().replace(/\s+/g,' '));
 }
-const pkErr=st=>st===401?'접속 키가 올바르지 않거나 만료됐어요':st===403?'이 키로는 저장소에 쓸 수 없어요 (키의 Contents 읽기·쓰기 권한을 확인해 주세요)':st===404?'저장소나 board.json을 찾지 못했어요 (저장소 이름과 키 권한을 확인해 주세요)':'GitHub 응답 오류('+st+')';
 async function pushBoardMenu(force){
-  const repo=pkGet(PK_REPO_KEY),token=pkGet(PK_TOKEN_KEY);
-  if(!repo||!token)return {ok:false,msg:'연결이 꺼져 있어요'};
-  const lines=pkMenuLines(),h=JSON.stringify(lines);
-  if(!force&&pkGet(PK_HASH_KEY)===h)return {ok:true,same:true};
-  const url='https://api.github.com/repos/'+repo+'/contents/board.json';
-  const hdr={'Authorization':'Bearer '+token,'Accept':'application/vnd.github+json'};
+  if(!sb||!sbUser)return {ok:false,msg:'로그인하면 보낼 수 있어요'};
+  const h=JSON.stringify(pkMenuLines());
+  if(!force){
+    if(pkGet(PK_HASH_KEY)===h)return {ok:true,same:true,quiet:true};
+    const f=+pkGet(PK_FAIL_KEY);if(f&&Date.now()-f<6*3600e3)return {ok:false,quiet:true};
+  }
   try{
-    for(let tries=0;tries<3;tries++){
-      const g=await fetch(url+'?t='+Date.now(),{headers:hdr,cache:'no-store'});
-      if(!g.ok)return {ok:false,msg:pkErr(g.status)};
-      const f=await g.json();let cfg;
-      try{cfg=JSON.parse(pkUnB64(f.content));if(!cfg||typeof cfg!=='object'||Array.isArray(cfg))throw 0}
-      catch(e){return {ok:false,msg:'board.json을 읽지 못했어요(형식 오류). 아무것도 바꾸지 않았어요.'}}
-      const old=(Array.isArray(cfg.menu)?cfg.menu:String(cfg.menu||'').split('\n')).map(x=>String(x));
-      const keep=[];let skip=false;
-      old.forEach(l=>{const t=l.trim();if(t===PK_BEGIN){skip=true;return}if(t===PK_END){skip=false;return}if(!skip&&t)keep.push(l)});
-      const next=(lines.length?[PK_BEGIN].concat(lines,[PK_END]):[]).concat(keep);
-      if(!force&&JSON.stringify(next)===JSON.stringify(old.filter(l=>l.trim()))){pkSet(PK_HASH_KEY,h);return {ok:true,same:true}}
-      cfg.menu=next;
-      const r=await fetch(url,{method:'PUT',headers:Object.assign({'Content-Type':'application/json'},hdr),
-        body:JSON.stringify({message:'식단표 앱에서 메뉴 갱신',content:pkB64(JSON.stringify(cfg,null,2)+'\n'),sha:f.sha})});
-      if(r.status===409||r.status===422)continue; // 그 사이 파일이 바뀜 → 다시 읽어서 한 번 더
-      if(!r.ok)return {ok:false,msg:pkErr(r.status)};
-      pkSet(PK_HASH_KEY,h);pkSet(PK_AT_KEY,String(Date.now()));
-      return {ok:true,n:lines.length};
+    const {data,error}=await sb.functions.invoke('boardsync',{body:{}});
+    if(error){
+      const st=error.context&&error.context.status;
+      if(st===404){pkSet(PK_FAIL_KEY,String(Date.now()));return {ok:false,msg:'식단 보내기 서버 함수(boardsync)가 아직 설치되지 않았어요'}}
+      let m='';try{const j=await error.context.json();m=j&&j.error}catch(e){}
+      pkSet(PK_FAIL_KEY,String(Date.now()));
+      return {ok:false,msg:m||'보내지 못했어요 ('+(error.message||st||'오류')+')'};
     }
-    return {ok:false,msg:'board.json이 계속 바뀌고 있어요. 잠시 뒤 다시 시도해 주세요.'};
+    if(data&&data.error){pkSet(PK_FAIL_KEY,String(Date.now()));return {ok:false,msg:data.error}}
+    pkSet(PK_HASH_KEY,h);pkSet(PK_FAIL_KEY,'');
+    if(!(data&&data.same))pkSet(PK_AT_KEY,String(Date.now()));
+    return {ok:true,same:!!(data&&data.same),n:data&&data.n};
   }catch(e){return {ok:false,msg:navigator.onLine===false?'인터넷에 연결되면 다시 보낼게요':'보내지 못했어요 ('+(e&&e.message?e.message:e)+')'}}
 }
 function schedulePk(){
-  if(!pkGet(PK_TOKEN_KEY))return;
+  if(!sb||!sbUser)return;
   clearTimeout(pkTimer);
-  pkTimer=setTimeout(async()=>{const r=await pushBoardMenu(false);if(!$('setScreen').hidden)drawPkState(r)},8000);
+  pkTimer=setTimeout(async()=>{const r=await pushBoardMenu(false);if(!$('setScreen').hidden&&!r.quiet)drawPkState(r)},8000);
 }
 function drawPkState(r){
-  const on=!!pkGet(PK_TOKEN_KEY),st=$('setPkState');
-  $('pkOff').hidden=!on;$('pkOn').textContent=on?'다시 연결하고 지금 보내기':'연결하고 지금 보내기';
-  if(!$('pkRepo').value)$('pkRepo').value=pkGet(PK_REPO_KEY)||'kimgh0209/family-board';
+  const st=$('setPkState');
   if(r&&r.msg){st.textContent='⚠️ '+r.msg;return}
   if(r&&r.ok&&!r.same){st.textContent='보냈어요 ✅ 메뉴 '+r.n+'개 · 보드에 반영되기까지 1~2분 걸려요';return}
+  if(r&&r.ok&&r.same){st.textContent='보드에 이미 같은 식단이 있어요 ✅';return}
   const at=+pkGet(PK_AT_KEY);
-  st.textContent=on?'연결됨 · '+pkGet(PK_REPO_KEY)+(at?' · 마지막 '+new Date(at).toLocaleString('ko-KR',{month:'numeric',day:'numeric',hour:'numeric',minute:'2-digit'}):'')+' · 메뉴 이름만 보내요(저장소가 공개라 인터넷에서 보일 수 있어요)':'꺼짐 · 식단표에서 적은 메뉴를 포켓몬보드에도 올려요';
+  st.textContent=at?'마지막으로 보낸 때 '+new Date(at).toLocaleString('ko-KR',{month:'numeric',day:'numeric',hour:'numeric',minute:'2-digit'})+' · 식단을 적으면 자동으로 올라가요':'식단을 적으면 자동으로 포켓몬보드에 올라가요 (서버 함수 설치가 필요해요)';
 }
 $('pkOn').onclick=async()=>{
-  const repo=$('pkRepo').value.trim().replace(/^https?:\/\/github\.com\//,'').replace(/\/+$/,''),token=$('pkToken').value.trim()||pkGet(PK_TOKEN_KEY);
-  if(!/^[\w.-]+\/[\w.-]+$/.test(repo)){drawPkState({msg:'저장소를 "이름/저장소" 모양으로 적어 주세요'});return}
-  if(!token){drawPkState({msg:'접속 키를 넣어 주세요'});return}
-  pkSet(PK_REPO_KEY,repo);pkSet(PK_TOKEN_KEY,token);$('pkToken').value='';
   $('setPkState').textContent='보내는 중…';
-  const r=await pushBoardMenu(true);
-  if(!r.ok&&/키|권한|찾지/.test(r.msg||'')&&r.msg.indexOf('board.json을 읽지')<0)pkSet(PK_TOKEN_KEY,''); // 틀린 키는 남기지 않음
-  drawPkState(r);
+  drawPkState(await pushBoardMenu(true));
 };
-$('pkOff').onclick=()=>{pkSet(PK_TOKEN_KEY,'');pkSet(PK_HASH_KEY,'');$('pkToken').value='';drawPkState()};
 /* 한 끼 고치기 */
 /* 추천 재료: 메뉴 이름에 들어 있는 말(키)로 보통 쓰는 재료를 알려 줘요. 기본 양념(소금·후추·간장 등)은 빼고 사야 할 만한 것만 적었어요.
    길게 맞는 키가 먼저 쓰이고, 키가 없으면 마지막의 일반 규칙(찌개·국·볶음 …)을 써요. */
