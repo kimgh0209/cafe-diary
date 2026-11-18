@@ -109,6 +109,18 @@ body.trip .ibtn{color:var(--trip)}
 .home .menu .mbtn .t{font-size:11.5px;letter-spacing:-.03em}
 .home .menu .mbtn .s{font-size:11px}
 .mbtn.grow .ic{background:#7a6bd6}
+.pkc{border:1px solid var(--line);background:var(--panel);border-radius:12px;padding:10px 12px;margin-bottom:8px}
+.pkc .n{font-weight:600;font-size:14px;word-break:keep-all}
+.pkc .n i{font-style:normal;font-size:11px;font-weight:600;color:#fff;background:#2f6f73;border-radius:999px;padding:1px 7px;margin-left:6px;vertical-align:1px}
+.pkc .n i.pv{background:#9a8f86}
+.pkc .m{font-size:13px;margin-top:3px}
+.pkc .a{font-size:12px;color:var(--muted);margin-top:2px}
+.pkc .l{display:flex;gap:6px;flex-wrap:wrap;margin-top:7px}
+.pkc .l a{font-size:12px;text-decoration:none;border:1px solid var(--line);border-radius:999px;padding:3px 10px;color:inherit}
+.pkc .fee{font-size:12px;margin-top:4px;color:#2f6f73}
+.pkpick{display:block;width:100%;text-align:left;border:1px solid var(--line);background:var(--panel);border-radius:12px;padding:9px 12px;margin-bottom:6px;font:inherit;font-size:13px;color:inherit;cursor:pointer}
+.pkpick small{display:block;color:var(--muted);font-size:12px}
+.pkh{font-size:13px;color:var(--muted);margin:2px 0 8px}
 .grform{flex:none;display:grid;gap:8px;padding:8px max(12px,env(safe-area-inset-right,0px)) calc(10px + env(safe-area-inset-bottom,0px)) max(12px,env(safe-area-inset-left,0px));border-top:1px solid var(--line);background:var(--panel)}
 .grform .r{display:flex;gap:8px;align-items:center}
 .grform label{flex:none;font-size:13px;color:var(--muted)}
@@ -659,7 +671,7 @@ body.trip .chip.on{background:var(--trip);border-color:var(--trip)}
       <div class="ttlbox"><h1 class="ttl" aria-label="우리가족기록♡"><span style="--c:#ff4d5e" aria-hidden="true">우</span><span style="--c:#ff9a2e" aria-hidden="true">리</span><span style="--c:#ffd21f" aria-hidden="true">가</span><span style="--c:#4cd36b" aria-hidden="true">족</span><span style="--c:#3db8ff" aria-hidden="true">기</span><span style="--c:#7a7bff" aria-hidden="true">록</span><span style="--c:#d36bff" aria-hidden="true">♡</span></h1><div class="date" id="homeDate"></div>
         <button class="dd" id="ddPill" type="button" hidden aria-label="기념일 보기"><span id="ddName"></span><b id="ddVal"></b></button>
         <button class="memory" id="homeMemory" type="button" hidden><span>📅</span><span class="y"></span><span class="t"></span></button>
-        <button class="memory" id="goFood" type="button">🎲 오늘 뭐 먹지?</button></div>
+        <button class="memory" id="goFood" type="button">🎲 오늘 뭐 먹지?</button><button class="memory" id="goPark" type="button">🅿️ 주차 정보</button></div>
       <div class="btns">
         <button class="cam" id="homeStat" type="button" aria-label="통계">
           <svg viewBox="0 0 24 24"><path d="M5 20V11M12 20V4M19 20v-6"/></svg></button>
@@ -832,6 +844,19 @@ body.trip .chip.on{background:var(--trip);border-color:var(--trip)}
   </div>
 </div>
 
+<!-- 주차 정보 -->
+<div class="screen editor over" id="parkScreen" hidden>
+  <div class="page">
+    <div class="bar"><button class="ibtn" id="pkBack" type="button">← 닫기</button><h1>주차 정보</h1></div>
+    <div class="filters"><div class="chips" id="pkChips"></div></div>
+    <div class="scroll" id="pkBody"></div>
+    <div class="dpadd">
+      <input type="text" id="pkQ" placeholder="가고 싶은 곳 (예: 에버랜드)" maxlength="60" autocomplete="off" aria-label="목적지">
+      <button class="btn on" id="pkGo" type="button">찾기</button>
+    </div>
+  </div>
+</div>
+
 <!-- 한 끼 식단 고치기 -->
 <div class="screen editor over" id="mealScreen" hidden>
   <div class="page">
@@ -999,7 +1024,7 @@ body.trip .chip.on{background:var(--trip);border-color:var(--trip)}
 </div></nav>
 
 <script>
-const APP_VER='36';
+const APP_VER='37';
 const $=id=>document.getElementById(id);
 const ACID=[['매우 낮음','쌉쌀하고 묵직한 맛'],['낮음','고소하고 부드러운 맛'],['중간','균형 잡힌 산미'],['높음','과일처럼 상큼한 산미'],['매우 높음','레몬처럼 날카로운 산미']];
 const KIND={spot:{label:'명소',icon:'📍'},food:{label:'식당',icon:'🍽️'},cafe:{label:'카페',icon:'☕'},bakery:{label:'빵집',icon:'🥐'},lodging:{label:'숙소',icon:'🛏️'},move:{label:'교통',icon:'🚗'}};
@@ -1217,7 +1242,7 @@ function drawHome(){
 }
 function showHome(){
   cancelMode();section=null;activeTrip=null;
-  ['listScreen','editScreen','tripScreen','stopScreen','setScreen','annScreen','wishScreen','wishEdit','statScreen','trashScreen','diaryScreen','dayScreen','foodScreen','cycleScreen','shopScreen','growthScreen','mealScreen'].forEach(i=>$(i).hidden=true);
+  ['listScreen','editScreen','tripScreen','stopScreen','setScreen','annScreen','wishScreen','wishEdit','statScreen','trashScreen','diaryScreen','dayScreen','foodScreen','cycleScreen','shopScreen','growthScreen','mealScreen','parkScreen'].forEach(i=>$(i).hidden=true);
   document.body.classList.remove('trip');
   drawHome();$('homeScreen').hidden=false;
 }
@@ -3159,6 +3184,74 @@ $('grBody').onclick=e=>{
 };
 $('goGrowth').onclick=()=>{$('grDate').value=today();drawGrowth();$('growthScreen').hidden=false};
 $('grBack').onclick=()=>{$('growthScreen').hidden=true;drawHome()};
+
+/* 주차 정보: 목적지 → 주변 주차장(카카오 장소검색 PK6, 거리순). 도보 시간은 직선거리×1.3÷분당 67m 어림 */
+let pkDest=null,pkRad=1000,pkPub=false,pkList=[];
+const pkOK=()=>typeof kakao!=='undefined'&&kakao.maps&&kakao.maps.services;
+const pkDist=m=>m>=1000?(m/1000).toFixed(1)+'km':m+'m';
+const pkWalk=m=>Math.max(1,Math.round(m*1.3/67));
+const pkSafe=u=>/^https?:\/\//.test(u||'')?u:'';
+function pkChips(){
+  const c=$('pkChips');
+  c.innerHTML=[300,500,1000,2000].map(r=>'<button class="chip'+(r===pkRad?' on':'')+'" data-r="'+r+'" type="button">'+pkDist(r)+'</button>').join('')+
+    '<button class="chip'+(pkPub?' on':'')+'" data-pub="1" type="button">공영만</button>';
+}
+function pkHome(msg){
+  const ws=db.wishes.filter(w=>w.lat&&w.name);
+  $('pkBody').innerHTML=(msg?'<div class="pkh">'+esc(msg)+'</div>':'<div class="pkh">가고 싶은 곳을 아래에 적고 <b>찾기</b>를 누르면 그 주변 주차장을 거리순으로 보여 줘요.</div>')+
+    (ws.length?'<div class="pkh">⭐ 가볼 곳에서 고르기</div>'+ws.map(w=>'<button class="pkpick" data-w="'+esc(w.id)+'" type="button">'+esc(w.name)+(w.addr?'<small>'+esc(w.addr)+'</small>':'')+'</button>').join(''):'');
+}
+function pkSearchDest(q){
+  if(!pkOK())return pkHome('지도 서비스를 불러오지 못했어요. 인터넷 연결을 확인해 주세요.');
+  $('pkBody').innerHTML='<div class="pkh">찾는 중…</div>';
+  new kakao.maps.services.Places().keywordSearch(q,(data,st)=>{
+    if(st!==kakao.maps.services.Status.OK||!data.length)return pkHome('"'+q+'"을(를) 못 찾았어요. 이름을 바꿔 보세요.');
+    if(data.length===1)return pkPickDest({name:data[0].place_name,lat:+data[0].y,lng:+data[0].x});
+    $('pkBody').innerHTML='<div class="pkh">어디로 갈까요?</div>'+data.slice(0,8).map((d,i)=>'<button class="pkpick" data-d="'+i+'" type="button">'+esc(d.place_name)+'<small>'+esc(d.road_address_name||d.address_name||'')+'</small></button>').join('');
+    $('pkBody')._cand=data;
+  },{location:new kakao.maps.LatLng(START[0],START[1])});
+}
+function pkPickDest(d){pkDest=d;pkLoad()}
+function pkLoad(){
+  if(!pkDest)return;
+  if(!pkOK())return pkHome('지도 서비스를 불러오지 못했어요.');
+  const K=kakao.maps;
+  $('pkBody').innerHTML='<div class="pkh">'+esc(pkDest.name)+' 주변 주차장을 찾는 중…</div>';
+  new K.services.Places().categorySearch('PK6',(data,st)=>{
+    if(st===K.services.Status.ZERO_RESULT||(st===K.services.Status.OK&&!data.length)){pkList=[];return pkDraw()}
+    if(st!==K.services.Status.OK)return pkHome('주차장을 불러오지 못했어요. 잠시 뒤 다시 해 보세요.');
+    pkList=data;pkDraw();
+  },{location:new K.LatLng(pkDest.lat,pkDest.lng),radius:pkRad,sort:K.services.SortBy.DISTANCE});
+}
+function pkDraw(){
+  const isPub=d=>/공영/.test((d.category_name||'')+d.place_name);
+  const L=pkList.filter(d=>!pkPub||isPub(d));
+  let h='<div class="pkh">📍 <b>'+esc(pkDest.name)+'</b> 반경 '+pkDist(pkRad)+' · '+L.length+'곳'+(pkList.length>=15?' (가까운 순 15곳까지)':'')+'</div>';
+  if(!L.length)h+='<div class="pkh">'+(pkPub&&pkList.length?'공영주차장이 없어요. "공영만"을 꺼 보세요.':'이 반경에는 주차장이 없어요. 위에서 반경을 넓혀 보세요.')+'</div>';
+  h+=L.map(d=>{
+    const m=+d.distance||0,url=pkSafe(d.place_url),nav='https://map.kakao.com/link/to/'+encodeURIComponent(d.place_name)+','+d.y+','+d.x;
+    return '<div class="pkc"><div class="n">'+esc(d.place_name)+'<i class="'+(isPub(d)?'':'pv')+'">'+(isPub(d)?'공영':'민영·기타')+'</i></div>'+
+      '<div class="m">🚶 목적지까지 '+pkDist(m)+' · 걸어서 약 '+pkWalk(m)+'분</div>'+
+      '<div class="a">'+esc(d.road_address_name||d.address_name||'')+'</div>'+
+      '<div class="l">'+(url?'<a href="'+esc(url)+'" target="_blank" rel="noopener">요금·운영시간 (카카오맵)</a>':'')+'<a href="'+esc(nav)+'" target="_blank" rel="noopener">길찾기</a>'+(d.phone?'<a href="tel:'+esc(d.phone)+'">📞 '+esc(d.phone)+'</a>':'')+'</div></div>';
+  }).join('');
+  h+='<div class="hint" style="color:var(--muted);font-size:12px;margin-top:8px">걷는 시간은 직선거리로 어림한 값이에요. 요금·운영시간은 카카오맵에서 확인해요.</div>';
+  $('pkBody').innerHTML=h;
+}
+$('goPark').onclick=()=>{pkChips();if(pkDest)pkLoad();else pkHome();$('parkScreen').hidden=false};
+$('pkBack').onclick=()=>{$('parkScreen').hidden=true;drawHome()};
+$('pkGo').onclick=()=>{const q=$('pkQ').value.trim();if(q)pkSearchDest(q)};
+$('pkQ').onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();$('pkGo').click()}};
+$('pkChips').onclick=e=>{
+  const b=e.target.closest('.chip');if(!b)return;
+  if(b.dataset.r)pkRad=+b.dataset.r;else pkPub=!pkPub;
+  pkChips();if(pkDest)pkLoad();
+};
+$('pkBody').onclick=e=>{
+  const w=e.target.closest('[data-w]'),d=e.target.closest('[data-d]');
+  if(w){const x=db.wishes.find(v=>v.id===w.dataset.w);if(x)pkPickDest({name:x.name,lat:x.lat,lng:x.lng})}
+  else if(d){const c=($('pkBody')._cand||[])[+d.dataset.d];if(c)pkPickDest({name:c.place_name,lat:+c.y,lng:+c.x})}
+};
 
 /* 식단표: 한 끼가 서버 'place' 줄 하나(id 'f'+날짜8자리+칸: b 아침/l 점심/d 저녁).
    {id,d,s,name,ing:[{n,st}],by,at}  st: 0 사야 함 · 1 집에 있어요 · 2 샀어요 */
