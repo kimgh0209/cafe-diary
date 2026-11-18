@@ -1,5 +1,5 @@
 // 앱 화면 파일을 저장해 두어 다음부터 빨리 열리게 하는 파일
-const CACHE = 'cafe-diary-v34';
+const CACHE = 'cafe-diary-v35';
 const SHELL = ['./', './index.html', './manifest.json', './icon-192.png', './icon-512.png'];
 
 self.addEventListener('install', e => {
